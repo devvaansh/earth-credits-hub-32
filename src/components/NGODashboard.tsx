@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardHeader from './DashboardHeader';
 import { Upload, MessageSquare } from 'lucide-react';
-import { Chatbot } from '@/components/chatbot'; 
+import { Chatbot } from '@/components/Chatbot'; 
 import { BackgroundBeams } from "@/components/ui/background-beams";
 
 const NGODashboard = () => {
