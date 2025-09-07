@@ -1,3 +1,5 @@
+// 📁 Homepage.tsx (or your main page file)
+
 import React, { Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -5,9 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import { ArrowRight, CheckCircle, Waves, Database, Satellite, Users } from 'lucide-react';
-
+import { ColourfulText } from './ui/colorfultext';
 // Use React.lazy for dynamic import in a Vite/CRA project.
-// This ensures the heavy 3D globe component only loads when needed.
 const World = lazy(() => import('@/components/ui/globe').then((m) => ({ default: m.World })));
 
 const Homepage = () => {
@@ -70,9 +71,7 @@ const Homepage = () => {
                 <h1 className="text-5xl sm:text-6xl font-bold tracking-tighter leading-tight">
                   The Trust Layer for 
                   <br />
-                  <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
-                    Blue Carbon
-                  </span>
+                  <ColourfulText text="Blue Carbon" />
                 </h1>
                 <p className="text-lg text-slate-300 max-w-lg">
                   Our platform uses blockchain and satellite-based AI to provide transparent, verifiable, and community-focused monitoring for blue carbon ecosystem restoration.
