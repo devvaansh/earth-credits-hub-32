@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react'; // <-- ADDED Suspense and lazy
+import React, { Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,14 +6,12 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { ArrowRight, CheckCircle, Waves, Database, Satellite, Users } from 'lucide-react';
 
-// --- 1. DYNAMIC IMPORT FOR THE GLOBE ---
-// We use React.lazy because this is not a Next.js project.
+// Use React.lazy for dynamic import in a Vite/CRA project.
 // This ensures the heavy 3D globe component only loads when needed.
 const World = lazy(() => import('@/components/ui/globe').then((m) => ({ default: m.World })));
 
 const Homepage = () => {
-  // --- 2. GLOBE CONFIGURATION AND DATA ---
-  // This data is copied directly from the demo to configure the globe's appearance and the animated arcs.
+  // Configuration for the globe's appearance and arcs
   const globeConfig = {
     pointSize: 4,
     globeColor: "#062056",
@@ -32,7 +30,7 @@ const Homepage = () => {
     arcLength: 0.9,
     rings: 1,
     maxRings: 3,
-    initialPosition: { lat: 20.5937, lng: 78.9629 }, // Centered on India
+    initialPosition: { lat: 20.5937, lng: 78.9629 }, // Centered on Delhi, India
     autoRotate: true,
     autoRotateSpeed: 0.8,
   };
@@ -49,14 +47,17 @@ const Homepage = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
       <Navbar />
+
+      {/* Subtle, ambient background elements */}
       <div className="fixed inset-0 z-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-cyan-500/5 rounded-full blur-3xl animate-pulse-slow"></div>
         <div className="absolute top-1/2 right-1/3 w-96 h-96 bg-emerald-400/5 rounded-full blur-3xl animate-pulse-slower"></div>
         <div className="absolute bottom-1/4 left-1/3 w-80 h-80 bg-blue-400/5 rounded-full blur-3xl animate-ping-slow"></div>
       </div>
+
       <main className="relative z-10">
 
-        {/* HERO SECTION - This is where the change happens */}
+        {/* HERO SECTION with Globe */}
         <section className="pt-24 pb-28">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -89,9 +90,9 @@ const Homepage = () => {
                 </div>
               </div>
 
-              {/* --- 3. HERO VISUAL REPLACED WITH THE GLOBE --- */}
-              <div className="relative h-[500px] w-full">
-                <Suspense fallback={<div className="text-center text-slate-400">Loading Globe...</div>}>
+              {/* Globe Visual */}
+              <div className="relative h-[500px] w-full max-w-lg mx-auto">
+                <Suspense fallback={<div className="flex items-center justify-center h-full text-slate-400">Loading Globe...</div>}>
                   <World data={sampleArcs} globeConfig={globeConfig} />
                 </Suspense>
               </div>
@@ -99,22 +100,163 @@ const Homepage = () => {
           </div>
         </section>
 
-        {/* ... The rest of your homepage sections remain unchanged ... */}
-        
+        {/* FEATURES SECTION */}
         <section id="features" className="py-24 bg-slate-900/70 backdrop-blur-md">
-           {/* ... feature content ... */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-4xl font-bold tracking-tighter text-white mb-4">
+                A New Standard for Environmental Verification
+              </h2>
+              <p className="text-lg text-slate-300">
+                We integrate advanced technology to bring unparalleled trust and efficiency to the blue carbon marketplace.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
+                <CardContent className="p-8 space-y-4 text-left">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
+                    <Satellite className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Smart MRV</h3>
+                  <p className="text-slate-400">
+                    Leverage satellite imagery and AI to automatically verify project data, ensuring accuracy and reducing manual overhead.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-emerald-500/50 transition-all duration-300">
+                <CardContent className="p-8 space-y-4 text-left">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-emerald-500 transition-colors">
+                    <Database className="h-6 w-6 text-emerald-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Immutable Ledger</h3>
+                  <p className="text-slate-400">
+                    Every transaction and verified credit is recorded on a blockchain, creating a tamper-proof audit trail for all stakeholders.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
+                <CardContent className="p-8 space-y-4 text-left">
+                  <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
+                    <Users className="h-6 w-6 text-cyan-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Community Empowerment</h3>
+                  <p className="text-slate-400">
+                    Onboard local communities, NGOs, and panchayats to drive restoration efforts and ensure equitable benefit sharing.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </section>
+
+        {/* BENEFITS SECTION */}
         <section className="py-28">
-           {/* ... benefits content ... */}
-        </section>
+           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+               <div className="p-8 bg-slate-900/50 border border-slate-800 rounded-xl">
+                   <div className="shadow-lg shadow-slate-950/50">
+                     <div className="p-3 bg-slate-800/70 rounded-t-lg flex items-center gap-2">
+                         <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                         <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                         <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                     </div>
+                     <div className="p-6 bg-slate-900 rounded-b-lg space-y-4">
+                         <div className="flex justify-between items-center">
+                             <h4 className="font-semibold text-white">Pichavaram Mangrove Forest</h4>
+                             <span className="text-xs font-mono px-2 py-1 bg-emerald-500/10 text-emerald-400 rounded">VERIFIED</span>
+                         </div>
+                         <div className="w-full bg-slate-800 rounded-full h-2.5">
+                             <div className="bg-gradient-to-r from-cyan-500 to-emerald-500 h-2.5 rounded-full" style={{width: '75%'}}></div>
+                         </div>
+                         <div className="text-sm text-slate-400 grid grid-cols-3 gap-4">
+                             <div><span className="font-bold text-white">1,250</span> ha Planted</div>
+                             <div><span className="font-bold text-white">8,200</span> tCO₂e Sequestered</div>
+                             <div><span className="font-bold text-white">98%</span> Health</div>
+                         </div>
+                     </div>
+                   </div>
+               </div>
+               <div className="space-y-6">
+                 <h2 className="text-4xl font-bold tracking-tighter text-white">
+                   Designed for <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">Impact and Scale</span>
+                 </h2>
+                 <p className="text-lg text-slate-300">
+                     Our unified platform streamlines the entire lifecycle of a blue carbon project, from planting to credit issuance.
+                 </p>
+                 <div className="space-y-3 pt-2">
+                   {[
+                     'Automated verification reduces costs and complexity.',
+                     'Blockchain ensures full data integrity and transparency.',
+                     'AI-powered monitoring provides real-time project insights.',
+                     'Directly connects funders with high-impact local projects.',
+                   ].map((benefit) => (
+                     <div key={benefit} className="flex items-start space-x-3">
+                       <CheckCircle className="h-5 w-5 mt-1 text-emerald-400 flex-shrink-0" />
+                       <span className="text-slate-300">{benefit}</span>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             </div>
+           </div>
+         </section>
+
+        {/* ABOUT SECTION */}
         <section id="about" className="py-24 bg-slate-900/70 backdrop-blur-md">
-           {/* ... about content ... */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-4xl font-bold tracking-tighter text-white mb-4">
+                The Power of Coastal Ecosystems
+              </h2>
+              <p className="text-lg text-slate-300">
+                Blue carbon ecosystems like mangroves are critical allies in the fight against climate change. Our mission is to protect and restore them.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
+                <div className="text-4xl font-bold text-cyan-400 tracking-tighter">10x</div>
+                <div className="text-sm text-slate-400 mt-1">More Carbon Storage</div>
+              </div>
+              <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
+                <div className="text-4xl font-bold text-emerald-400 tracking-tighter">100%</div>
+                <div className="text-sm text-slate-400 mt-1">On-Chain Verification</div>
+              </div>
+              <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
+                <div className="text-4xl font-bold text-cyan-400 tracking-tighter">70%</div>
+                <div className="text-sm text-slate-400 mt-1">Reduced MRV Costs</div>
+              </div>
+              <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
+                <div className="text-4xl font-bold text-emerald-400 tracking-tighter">24/7</div>
+                <div className="text-sm text-slate-400 mt-1">AI-Powered Monitoring</div>
+              </div>
+            </div>
+          </div>
         </section>
+
+        {/* CTA SECTION */}
         <section className="py-28">
-           {/* ... cta content ... */}
+          <div className="max-w-3xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-tighter text-white mb-6">
+              Join the Movement
+            </h2>
+            <p className="text-lg text-slate-300 mb-8 max-w-2xl mx-auto">
+              Whether you're a project developer, corporate partner, or community leader, our platform provides the tools to drive meaningful climate action.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/login">
+                <Button size="lg" className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-600 text-white font-semibold transition-all duration-300 hover:scale-105 group shadow-lg shadow-cyan-500/20">
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </div>
+          </div>
         </section>
+
       </main>
+
       <Footer />
+
       <style>{`
         @keyframes pulse-slow { 50% { opacity: 0.8; } }
         @keyframes pulse-slower { 50% { opacity: 0.6; } }
