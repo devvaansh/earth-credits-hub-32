@@ -5,9 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Leaf, Waves } from 'lucide-react';
 import { AuroraBackground } from '@/components/ui/aurora-background';
 import { motion } from "framer-motion";
+import logo from '@/assets/logob.png'; // Import the logo from assets
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -265,13 +265,8 @@ const Login = () => {
           style={{ transformStyle: 'preserve-3d' }}
         >
           <CardHeader className="space-y-6 text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <motion.div animate={{ rotate: [0, 5, -5, 0], transition: { duration: 2, repeat: Infinity, ease: "linear" } }}>
-                <Waves className="h-8 w-8 text-sky-400" />
-              </motion.div>
-              <motion.div animate={{ scale: [1, 1.1, 1], transition: { duration: 3, repeat: Infinity, ease: "easeInOut" } }}>
-                <Leaf className="h-8 w-8 text-green-400" />
-              </motion.div>
+            <div className="flex items-center justify-center mb-4">
+              <img src={logo} alt="Company Logo" className="h-20 w-20 rounded-full" />
             </div>
             <div>
               <CardTitle className="text-3xl font-bold text-gray-100 tracking-wider">
