@@ -87,10 +87,23 @@ export default {
             height: "0",
           },
         },
+        // START: ADDED THIS KEYFRAME
+        aurora: {
+          from: {
+            backgroundPosition: "50% 50%, 50% 50%",
+          },
+          to: {
+            backgroundPosition: "350% 50%, 350% 50%",
+          },
+        },
+        // END: ADDED THIS KEYFRAME
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        // START: ADDED THIS ANIMATION
+        aurora: "aurora 60s linear infinite",
+        // END: ADDED THIS ANIMATION
       },
     },
   },
