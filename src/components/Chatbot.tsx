@@ -1,140 +1,175 @@
-// src/components/ui/Chatbot.tsx
+// src/components/Chatbot.tsx
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User } from 'lucide-react';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bot, User, Send, Paperclip } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { GenerativeShimmerStyle } from "./ui/GenerativeShimmerStyle";
+import ReactMarkdown from 'react-markdown';
+// ## 1. DYNAMIC SKELETON LOADER IMPORT REMOVED ##
+// import { DynamicSkeletonLoader } from "./ui/DynamicSkeletonLoader";
 
-// Define the structure for a single message
-type Message = {
-  id: number;
-  text: string;
-  sender: 'user' | 'ai';
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+};
+const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
 };
 
-export const Chatbot = () => {
-  // State to hold the conversation messages
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      text: "Welcome! I am VerifiAI. To begin, please tell me the official name of your proposed blue carbon project.",
-      sender: 'ai',
-    },
-  ]);
+// --- Main Chatbot Component ---
+export const Chatbot = ({
+    messages,
+    onSendMessage,
+    isAiTyping,
+    onFileUpload
+}) => {
+    const [inputValue, setInputValue] = React.useState('');
+    const chatContainerRef = React.useRef(null);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // State for the user's current input
-  const [inputValue, setInputValue] = useState('');
-  
-  // Ref for the message container to enable auto-scrolling
-  const messagesEndRef = useRef<null | HTMLDivElement>(null);
+    React.useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [messages, isAiTyping]);
 
-  // Function to automatically scroll to the latest message
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+    const suggestedPrompts = [
+        { title: "Start my Project", text: "I want to start a new project." },
+        { title: "List required documents", text: "What documents do I need for a mangrove project?" },
+        { title: "Explain satellite verification", text: "Tell me about the satellite verification step." },
+        { title: "What is a PDD?", text: "What is a Project Design Document?" },
+    ];
 
-  // useEffect hook to scroll down whenever messages are updated
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-
-  // Handle form submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputValue.trim() === '') return;
-
-    // Add user's message to the chat
-    const userMessage: Message = {
-      id: Date.now(),
-      text: inputValue,
-      sender: 'user',
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (inputValue.trim()) {
+            onSendMessage(inputValue);
+            setInputValue('');
+        }
     };
-    setMessages(prev => [...prev, userMessage]);
+    
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
 
-    // Clear the input field
-    setInputValue('');
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (onFileUpload) {
+                onFileUpload(file);
+            }
+        }
+    };
 
-    // **Future Step:** Here you will call your backend API
-    // For now, we'll simulate an AI response after a short delay
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: Date.now() + 1,
-        // This is a placeholder. The real text will come from your Gemini backend.
-        text: "Thank you. Your project is now registered. As per MoEFCC guidelines, please specify the project type (e.g., Mangrove Afforestation or Seagrass Restoration).",
-        sender: 'ai',
-      };
-      setMessages(prev => [...prev, aiResponse]);
-    }, 1500);
-  };
-
-  return (
-    <div className="flex flex-col h-[85vh] bg-slate-900/50 border border-blue-900/50 rounded-lg shadow-xl">
-      
-      {/* Chat Header */}
-      <div className="p-4 border-b border-blue-900/50 flex items-center">
-        <Bot className="w-6 h-6 text-cyan-400 mr-3" />
-        <h2 className="text-xl font-semibold text-white">VerifiAI Assistant</h2>
-      </div>
-
-      {/* Messages Area */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="flex flex-col space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-start gap-3 ${
-                message.sender === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              {/* AI Avatar */}
-              {message.sender === 'ai' && (
-                <div className="w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-5 h-5 text-cyan-400" />
-                </div>
-              )}
-
-              {/* Message Bubble */}
-              <div
-                className={`max-w-md p-3 rounded-xl ${
-                  message.sender === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-800 text-slate-300'
-                }`}
-              >
-                <p>{message.text}</p>
-              </div>
-
-              {/* User Avatar */}
-              {message.sender === 'user' && (
-                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
-                  <User className="w-5 h-5 text-slate-300" />
-                </div>
-              )}
+    return (
+        <div className="flex flex-col h-[85vh] bg-slate-900/50 border border-blue-900/50 rounded-lg shadow-xl">
+            <GenerativeShimmerStyle />
+            
+            <div className="p-4 border-b border-blue-900/50 flex items-center">
+                <Bot className="w-6 h-6 text-cyan-400 mr-3" />
+                <h2 className="text-xl font-semibold text-white">VerifiAI Assistant</h2>
             </div>
-          ))}
-           {/* Empty div to act as a scroll target */}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
 
-      {/* Input Form */}
-      <div className="p-4 border-t border-blue-900/50">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Tell me the name of your project..."
-            className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed transition-colors"
-            disabled={!inputValue.trim()}
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+            <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
+                <div className="flex flex-col space-y-4">
+                    <AnimatePresence>
+                        {messages.map((msg) => (
+                            <motion.div
+                                key={msg.id}
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className={`flex items-start gap-3 max-w-2xl ${msg.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto'}`}
+                            >
+                                {msg.sender === 'ai' && (
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center">
+                                        <Bot className="w-5 h-5 text-cyan-400" />
+                                    </div>
+                                )}
+                                <div className={`max-w-xl p-3 rounded-xl whitespace-pre-wrap ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                                     {msg.sender === 'ai' ? (
+                                        <div className="prose prose-sm prose-invert prose-p:my-2 prose-li:my-1 text-slate-300">
+                                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                        </div>
+                                    ) : (
+                                        <p>{msg.text}</p>
+                                    )}
+                                </div>
+                                {msg.sender === 'user' && (
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                                        <User className="w-5 h-5 text-slate-300" />
+                                    </div>
+                                )}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {isAiTyping && (
+                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-3 justify-start">
+                            <div className="w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center flex-shrink-0">
+                                <Bot className="w-5 h-5 text-cyan-400" />
+                            </div>
+                            {/* ## 2. REVERTED TO THE SIMPLE, NON-DYNAMIC SKELETON LOADER ## */}
+                            <div className="max-w-md p-3 rounded-xl bg-slate-800 text-slate-300 space-y-2">
+                                <div className="generative-bg h-4 w-48 rounded"></div>
+                                <div className="generative-bg h-4 w-40 rounded"></div>
+                                <div className="generative-bg h-4 w-32 rounded"></div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {messages.length <= 1 && !isAiTyping && (
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="pt-4 pb-8">
+                           <motion.h3 variants={itemVariants} className="text-md font-semibold text-slate-400 mb-4 text-center">Or try a suggestion...</motion.h3>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                               {suggestedPrompts.map((prompt) => (
+                                   <motion.button
+                                       key={prompt.text}
+                                       variants={itemVariants}
+                                       onClick={() => onSendMessage(prompt.text)}
+                                       className="p-3 bg-slate-800/50 rounded-lg text-left text-sm font-medium text-slate-300 border border-slate-700/50 shadow-sm hover:bg-slate-800/80 hover:border-slate-600 transition-all focus:ring-2 focus:ring-cyan-500 outline-none"
+                                   >
+                                       <p>{prompt.title}</p>
+                                   </motion.button>
+                               ))}
+                           </div>
+                       </motion.div>
+                    )}
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-blue-900/50">
+                <form onSubmit={handleSubmit} className="flex items-center gap-2">
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-lg text-slate-400 hover:bg-slate-700/50 hover:text-cyan-400"
+                        onClick={handleUploadClick}
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </Button>
+                    <Input
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder="Type a message or upload a file..."
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                    <Button type="submit" size="icon" className="h-10 w-10 rounded-lg bg-blue-600 hover:bg-blue-700">
+                        <Send className="h-5 w-5" />
+                    </Button>
+                </form>
+            </div>
+        </div>
+    );
 };
