@@ -7,6 +7,7 @@ import Homepage from "./components/Homepage";
 import Login from "./components/Login";
 import NGODashboard from "./components/NGODashboard";
 import VerifierDashboard from "./components/VerifierDashboard";
+import ProjectVerificationWorkspace from "./components/ProjectVerificationWorkspace";
 import AdminDashboard from "./components/AdminDashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,14 @@ const App = () => (
             element={
               <PrivateRoute allowedRoles={['Verifier']}>
                 <VerifierDashboard />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/project/:projectId" 
+            element={
+              <PrivateRoute allowedRoles={['Verifier']}>
+                <ProjectVerificationWorkspace />
               </PrivateRoute>
             } 
           />
