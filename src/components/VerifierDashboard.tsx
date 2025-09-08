@@ -1,227 +1,137 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import DashboardHeader from './DashboardHeader';
-import { CheckCircle, XCircle, Eye, Loader2, Satellite, Brain } from 'lucide-react';
+import { Loader2, Satellite, XCircle, MapPin } from 'lucide-react';
 
-interface Submission {
-  id: string;
-  projectName: string;
-  location: string;
-  date: string;
-  status: 'Pending' | 'Verified' | 'Fraud Detected';
-  submittedBy: string;
-}
+// --- EXAMPLE LOCATIONS ---
+// These are 5 interesting locations in India known to have good satellite data.
+const exampleLocations = [
+  { name: 'India Gate, Delhi', lat: 28.6129, lon: 77.2295 },
+  { name: 'Mumbai Port', lat: 18.9647, lon: 72.8427 },
+  { name: 'Himalayan Peaks', lat: 27.9881, lon: 86.9250 },
+  { name: 'Rann of Kutch', lat: 23.7337, lon: 70.4131 },
+  { name: 'Punjab Fields', lat: 30.8990, lon: 75.8573 },
+];
 
-const VerifierDashboard = () => {
-  const [submissions, setSubmissions] = useState<Submission[]>([
-    {
-      id: '1',
-      projectName: 'Mangrove Restoration Project',
-      location: '-1.2921, 36.8219',
-      date: '2024-01-15',
-      status: 'Pending',
-      submittedBy: 'Ocean Conservation NGO'
-    },
-    {
-      id: '2',
-      projectName: 'Coastal Wetland Protection',
-      location: '-4.0435, 39.6682',
-      date: '2024-01-10',
-      status: 'Pending',
-      submittedBy: 'Marine Life Foundation'
-    },
-    {
-      id: '3',
-      projectName: 'Seagrass Restoration Initiative',
-      location: '2.0469, 45.3182',
-      date: '2024-01-08',
-      status: 'Verified',
-      submittedBy: 'Blue Ocean Trust'
-    }
-  ]);
+const SatelliteVerifier = () => {
+  // State for the input fields
+  const [lat, setLat] = useState<string>('28.6129');
+  const [lon, setLon] = useState<string>('77.2295');
+
+  // State for the API call and image display
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleVerify = async (id: string) => {
-    setVerifyingId(id);
-    
-    // Simulate AI verification process
-    setTimeout(() => {
-      const isVerified = Math.random() > 0.3; // 70% chance of verification
-      const newStatus = isVerified ? 'Verified' : 'Fraud Detected';
-      
-      setSubmissions(prev =>
-        prev.map(submission =>
-          submission.id === id
-            ? { ...submission, status: newStatus }
-            : submission
-        )
-      );
-      
-      toast({
-        title: `Verification ${isVerified ? 'Successful' : 'Failed'}`,
-        description: isVerified 
-          ? 'AI analysis confirms legitimate environmental data'
-          : 'AI analysis detected potential data inconsistencies',
-        variant: isVerified ? 'default' : 'destructive'
-      });
-      
-      setVerifyingId(null);
-    }, 3000);
-  };
+  // Fetches satellite image from your backend API
+  const handleFetchImage = async () => {
+    setIsLoading(true);
+    setError(null);
+    setImageUrl(null);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Verified':
-        return 'bg-success text-success-foreground';
-      case 'Fraud Detected':
-        return 'bg-destructive text-destructive-foreground';
-      default:
-        return 'bg-muted text-muted-foreground';
+    const apiUrl = `http://localhost:3001/api/satellite/image?lat=${lat}&lon=${lon}`;
+
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle errors from the backend, including "No image found"
+        throw new Error(data.error || 'Failed to fetch image from server.');
+      }
+      
+      setImageUrl(data.imageUrl);
+      toast({ title: "Success!", description: "Satellite image loaded." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An unknown error occurred.';
+      setError(message);
+      toast({ title: "Error", description: message, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Verified':
-        return <CheckCircle className="h-4 w-4" />;
-      case 'Fraud Detected':
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return <Eye className="h-4 w-4" />;
-    }
+  // Sets the coordinates when an example button is clicked
+  const handleExampleClick = (exampleLat: number, exampleLon: number) => {
+    setLat(exampleLat.toString());
+    setLon(exampleLon.toString());
+    // Automatically fetch the image for the selected example
+    handleFetchImage(); 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <DashboardHeader 
-          title="Verifier Dashboard" 
-          subtitle="AI-Powered Environmental Data Verification"
-        />
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Brain className="h-5 w-5 text-primary" />
-                <span>Submission Queue</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+    <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+      <Card className="w-full max-w-4xl shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Satellite className="h-6 w-6 text-primary" />
+            <span>Live Satellite Image Verifier</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Left side: Controls and Inputs */}
+            <div>
               <div className="space-y-4">
-                {submissions.map((submission) => (
-                  <div
-                    key={submission.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <h3 className="font-medium text-foreground">
-                        {submission.projectName}
-                      </h3>
-                      <div className="text-sm text-muted-foreground space-y-1 mt-1">
-                        <p>Location: {submission.location}</p>
-                        <p>Date: {submission.date}</p>
-                        <p>Submitted by: {submission.submittedBy}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Badge className={getStatusColor(submission.status)}>
-                        {getStatusIcon(submission.status)}
-                        <span className="ml-1">{submission.status}</span>
-                      </Badge>
-                      {submission.status === 'Pending' && (
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => handleVerify(submission.id)}
-                          disabled={verifyingId === submission.id}
-                        >
-                          {verifyingId === submission.id ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Verifying...
-                            </>
-                          ) : (
-                            'Verify with AI'
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                <div>
+                  <label htmlFor="latitude" className="text-sm font-medium">Latitude</label>
+                  <Input id="latitude" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="e.g., 28.6129" />
+                </div>
+                <div>
+                  <label htmlFor="longitude" className="text-sm font-medium">Longitude</label>
+                  <Input id="longitude" value={lon} onChange={(e) => setLon(e.target.value)} placeholder="e.g., 77.2295" />
+                </div>
+                <Button onClick={handleFetchImage} disabled={isLoading} className="w-full">
+                  {isLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <MapPin className="h-4 w-4 mr-2" />}
+                  Fetch Image
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Satellite className="h-5 w-5 text-secondary" />
-                <span>Satellite Imagery</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="aspect-square bg-muted rounded-lg flex items-center justify-center mb-4">
-                <div className="text-center">
-                  <Satellite className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Satellite imagery will appear here for verification
-                  </p>
+
+              <div className="mt-6">
+                <h4 className="font-medium mb-2">Or try an example:</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {exampleLocations.map(loc => (
+                    <Button key={loc.name} variant="outline" size="sm" onClick={() => handleExampleClick(loc.lat, loc.lon)}>
+                      {loc.name}
+                    </Button>
+                  ))}
                 </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Resolution:</span>
-                  <span className="text-foreground">10m/pixel</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date:</span>
-                  <span className="text-foreground">2024-01-15</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Cloud Cover:</span>
-                  <span className="text-foreground">5%</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle>Verification Statistics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-foreground">
-                  {submissions.filter(s => s.status === 'Verified').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Verified</div>
-              </div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-foreground">
-                  {submissions.filter(s => s.status === 'Pending').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Pending</div>
-              </div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg">
-                <div className="text-2xl font-bold text-foreground">
-                  {submissions.filter(s => s.status === 'Fraud Detected').length}
-                </div>
-                <div className="text-sm text-muted-foreground">Flagged</div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            {/* Right side: Image Display */}
+            <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+              {isLoading && (
+                <div className="text-center text-muted-foreground">
+                  <Loader2 className="h-12 w-12 mx-auto mb-2 animate-spin" />
+                  <p>Contacting Satellite...</p>
+                </div>
+              )}
+              {error && (
+                <div className="text-center text-destructive p-4">
+                  <XCircle className="h-12 w-12 mx-auto mb-2" />
+                  <p>{error}</p>
+                </div>
+              )}
+              {imageUrl && !isLoading && !error && (
+                <img src={imageUrl} alt={`Satellite view of ${lat}, ${lon}`} className="w-full h-full object-cover" />
+              )}
+              {!imageUrl && !isLoading && !error && (
+                <div className="text-center text-muted-foreground p-4">
+                  <Satellite className="h-12 w-12 mx-auto mb-2" />
+                  <p>Enter coordinates or select an example to begin.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default VerifierDashboard;
+export default SatelliteVerifier;
