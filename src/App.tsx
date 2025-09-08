@@ -3,10 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Homepage from "./components/Homepage";
 import Login from "./components/Login";
 import NGODashboard from "./components/NGODashboard";
 import VerifierDashboard from "./components/VerifierDashboard";
+import ProjectVerificationWorkspace from "./components/ProjectVerificationWorkspace";
 import AdminDashboard from "./components/AdminDashboard";
 import PrivateRoute from "./components/PrivateRoute";
 import NotFound from "./pages/NotFound";
@@ -20,8 +20,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Login />} />
           <Route 
             path="/ngo-dashboard" 
             element={
@@ -35,6 +34,14 @@ const App = () => (
             element={
               <PrivateRoute allowedRoles={['Verifier']}>
                 <VerifierDashboard />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/project/:projectId" 
+            element={
+              <PrivateRoute allowedRoles={['Verifier']}>
+                <ProjectVerificationWorkspace />
               </PrivateRoute>
             } 
           />
