@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerativeShimmerStyle } from "./ui/GenerativeShimmerStyle";
 import ReactMarkdown from 'react-markdown';
-// ## 1. DYNAMIC SKELETON LOADER IMPORT REMOVED ##
-// import { DynamicSkeletonLoader } from "./ui/DynamicSkeletonLoader";
+// ## 1. ADDED THE CORRECT IMPORT ##
+import { TextGenerateEffect } from './ui/text-generate-effect';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -19,15 +19,29 @@ const itemVariants = {
     visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100 } }
 };
 
+// --- Type Definitions for props ---
+interface Message {
+    id: number | string;
+    text: string;
+    sender: 'user' | 'ai';
+}
+
+interface ChatbotProps {
+    messages: Message[];
+    onSendMessage: (message: string) => void;
+    isAiTyping: boolean;
+    onFileUpload?: (file: File) => void;
+}
+
 // --- Main Chatbot Component ---
-export const Chatbot = ({
+export const Chatbot: React.FC<ChatbotProps> = ({ 
     messages,
     onSendMessage,
     isAiTyping,
     onFileUpload
 }) => {
     const [inputValue, setInputValue] = React.useState('');
-    const chatContainerRef = React.useRef(null);
+    const chatContainerRef = React.useRef<HTMLDivElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
@@ -43,7 +57,7 @@ export const Chatbot = ({
         { title: "What is a PDD?", text: "What is a Project Design Document?" },
     ];
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (inputValue.trim()) {
             onSendMessage(inputValue);
@@ -66,6 +80,7 @@ export const Chatbot = ({
 
     return (
         <div className="flex flex-col h-[85vh] bg-slate-900/50 border border-blue-900/50 rounded-lg shadow-xl">
+            {/* This is for the shimmer on the skeleton loader, so it stays */}
             <GenerativeShimmerStyle />
             
             <div className="p-4 border-b border-blue-900/50 flex items-center">
@@ -76,36 +91,47 @@ export const Chatbot = ({
             <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
                 <div className="flex flex-col space-y-4">
                     <AnimatePresence>
-                        {messages.map((msg) => (
-                            <motion.div
-                                key={msg.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className={`flex items-start gap-3 max-w-2xl ${msg.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto'}`}
-                            >
-                                {msg.sender === 'ai' && (
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center">
-                                        <Bot className="w-5 h-5 text-cyan-400" />
-                                    </div>
-                                )}
-                                <div className={`max-w-xl p-3 rounded-xl whitespace-pre-wrap ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
-                                     {msg.sender === 'ai' ? (
-                                        <div className="prose prose-sm prose-invert prose-p:my-2 prose-li:my-1 text-slate-300">
-                                            <ReactMarkdown>{msg.text}</ReactMarkdown>
+                        {messages.map((msg, index) => {
+                            // ## 2. ADDED LOGIC TO IDENTIFY THE LAST MESSAGE ##
+                            const isLastMessage = index === messages.length - 1;
+
+                            return (
+                                <motion.div
+                                    key={msg.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className={`flex items-start gap-3 max-w-2xl ${msg.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto'}`}
+                                >
+                                    {msg.sender === 'ai' && (
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center">
+                                            <Bot className="w-5 h-5 text-cyan-400" />
                                         </div>
-                                    ) : (
-                                        <p>{msg.text}</p>
                                     )}
-                                </div>
-                                {msg.sender === 'user' && (
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                                        <User className="w-5 h-5 text-slate-300" />
+                                    <div className={`max-w-xl p-3 rounded-xl whitespace-pre-wrap ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
+                                        {msg.sender === 'ai' ? (
+                                            // ## 3. CONDITIONAL RENDERING LOGIC ##
+                                            // If it's the last AI message, use the effect. Otherwise, show static markdown.
+                                            isLastMessage ? (
+                                                <TextGenerateEffect words={msg.text} />
+                                            ) : (
+                                                <div className="prose prose-sm prose-invert prose-p:my-2 prose-li:my-1 text-slate-300">
+                                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                                </div>
+                                            )
+                                        ) : (
+                                            <p>{msg.text}</p>
+                                        )}
                                     </div>
-                                )}
-                            </motion.div>
-                        ))}
+                                    {msg.sender === 'user' && (
+                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                                            <User className="w-5 h-5 text-slate-300" />
+                                        </div>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
                     </AnimatePresence>
 
                     {isAiTyping && (
@@ -113,7 +139,6 @@ export const Chatbot = ({
                             <div className="w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center flex-shrink-0">
                                 <Bot className="w-5 h-5 text-cyan-400" />
                             </div>
-                            {/* ## 2. REVERTED TO THE SIMPLE, NON-DYNAMIC SKELETON LOADER ## */}
                             <div className="max-w-md p-3 rounded-xl bg-slate-800 text-slate-300 space-y-2">
                                 <div className="generative-bg h-4 w-48 rounded"></div>
                                 <div className="generative-bg h-4 w-40 rounded"></div>
