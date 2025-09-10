@@ -1,49 +1,26 @@
+
 import React from 'react';
-import { Waves, Leaf } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-muted/50 border-t border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Logo and Description */}
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center space-x-2 mb-4">
-              <Waves className="h-6 w-6 text-primary" />
-              <Leaf className="h-6 w-6 text-secondary" />
-              <span className="text-lg font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Blue Carbon Registry
-              </span>
-            </div>
-            <p className="text-muted-foreground mb-4 max-w-md">
-              A blockchain-powered platform for monitoring, reporting, and verification of blue carbon ecosystem restoration.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              © 2024 Blue Carbon Registry. A project for NCCR, MoES.
-            </p>
-          </div>
-
-          {/* Quick Links */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4">Quick Links</h3>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a href="#privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#terms" className="text-muted-foreground hover:text-primary transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
-                  Contact Us
-                </a>
-              </li>
-            </ul>
-          </div>
+    <footer className="w-full mt-auto bg-[#1a2233] text-gray-100 p-8 shadow-lg">
+      <div className="flex flex-col md:flex-row justify-between items-center w-full max-w-6xl mx-auto gap-6">
+        <div className="text-left">
+          <h2 className="font-bold text-lg text-blue-400 flex items-center gap-2">
+            <span>🌊</span> <span className="text-green-400">🌱</span> Blue Carbon Registry
+          </h2>
+          <p className="mt-2 text-sm max-w-xs text-gray-200">
+            A blockchain-powered platform for monitoring, reporting, and verification of blue carbon ecosystem restoration.
+          </p>
+          <p className="mt-2 text-xs text-gray-300">© 2024 Blue Carbon Registry. A project for NCCR, MoES.</p>
+        </div>
+        <div className="text-left md:text-right">
+          <h3 className="font-semibold text-base text-blue-200">Quick Links</h3>
+          <ul className="mt-2 space-y-1">
+            <li><a href="#" className="hover:text-blue-400 text-gray-100 underline underline-offset-2 transition">Privacy Policy</a></li>
+            <li><a href="#" className="hover:text-blue-400 text-gray-100 underline underline-offset-2 transition">Terms of Service</a></li>
+            <li><a href="#" className="hover:text-blue-400 text-gray-100 underline underline-offset-2 transition">Contact Us</a></li>
+          </ul>
         </div>
       </div>
     </footer>
