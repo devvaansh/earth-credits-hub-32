@@ -14,7 +14,7 @@ import NotFound from "./pages/NotFound";
 import SolanaWalletProvider from "./components/WalletProvider";
 
 // Import Solana wallet styles
-import '@solana/wallet-adapter-react-ui/styles.css';
+import "@solana/wallet-adapter-react-ui/styles.css";
 
 const queryClient = new QueryClient();
 
@@ -29,37 +29,37 @@ const App = () => (
             <Route path="/" element={<Navigate to="/homepage" replace />} />
             <Route path="/homepage" element={<Homepage />} />
             <Route path="/login" element={<Login />} />
-            <Route 
-              path="/ngo-dashboard" 
+            <Route
+              path="/ngo-dashboard"
               element={
-                <PrivateRoute allowedRoles={['NGO']}>
+                <PrivateRoute allowedRoles={["NGO"]}>
                   <NGODashboard />
                 </PrivateRoute>
-              } 
+              }
             />
-            <Route 
-              path="/verifier-dashboard" 
+            <Route
+              path="/verifier-dashboard"
               element={
-                <PrivateRoute allowedRoles={['Verifier']}>
+                <PrivateRoute allowedRoles={["Verifier"]}>
                   <VerifierDashboard />
                 </PrivateRoute>
-              } 
+              }
             />
-            <Route 
-              path="/project/:projectId" 
+            <Route
+              path="/project/:projectId"
               element={
-                <PrivateRoute allowedRoles={['Verifier']}>
+                <PrivateRoute allowedRoles={["Verifier"]}>
                   <ProjectVerificationWorkspace />
                 </PrivateRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin-dashboard" 
+            <Route
+              path="/admin-dashboard"
               element={
-                <PrivateRoute allowedRoles={['Admin']}>
+                <PrivateRoute allowedRoles={["Admin"]}>
                   <AdminDashboard />
                 </PrivateRoute>
-              } 
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
