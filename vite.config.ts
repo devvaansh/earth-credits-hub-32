@@ -13,6 +13,27 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
+    },
+  },
+  define: {
+    // Fix for Buffer is not defined error
+    'process.env': {},
+    'global': {}
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      // Add necessary polyfills for Solana Web3.js
+      external: ['utf-8-validate', 'bufferutil']
     },
   },
 }));

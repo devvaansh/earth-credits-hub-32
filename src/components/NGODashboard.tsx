@@ -1,11 +1,15 @@
 // src/components/NGODashboard.tsx
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from '@/hooks/use-toast';
 import DashboardHeader from './DashboardHeader';
 import { Chatbot } from '@/components/Chatbot';
 import { BackgroundBeams } from "@/components/ui/background-beams";
+import { useSolanaAction } from '@/hooks/useSolanaAction';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { Button } from '@/components/ui/button';
+import { Send, Coins, Wallet } from 'lucide-react';
 
 // --- Gemini API Configuration ---
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -29,11 +33,13 @@ type GeminiHistoryItem = { role: 'user' | 'model'; parts: { text: string }[] };
 
 // --- Main Dashboard Component ---
 const NGODashboard = () => {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isAiTyping, setIsAiTyping] = useState(false);
+    const [messages, setMessages] = React.useState<Message[]>([]);
+    const [isAiTyping, setIsAiTyping] = React.useState(false);
+    const [balance, setBalance] = React.useState<number>(0);
     const { toast } = useToast();
+    const { sendTransaction, requestAirdrop, getBalance, isSending } = useSolanaAction();
 
-    useEffect(() => {
+    React.useEffect(() => {
         setMessages([
             {
                 id: 1,
@@ -44,7 +50,6 @@ const NGODashboard = () => {
     }, []);
 
     const handleSendMessage = async (userInput: string) => {
-        // This function remains the same as before
         if (!API_KEY) {
             toast({
                 title: "API Key Not Configured",
@@ -90,9 +95,7 @@ const NGODashboard = () => {
         }
     };
 
-    // ## ADD THIS NEW FUNCTION TO HANDLE FILE UPLOADS ##
     const handleFileUpload = (file: File) => {
-        // 1. Add a confirmation message to the chat from the user
         const userMessage: Message = {
             id: Date.now(),
             text: `File Uploaded: **${file.name}** (${(file.size / 1024).toFixed(2)} KB)`,
@@ -100,7 +103,6 @@ const NGODashboard = () => {
         };
         setMessages(prev => [...prev, userMessage]);
         
-        // 2. Simulate the AI responding after a short delay
         setIsAiTyping(true);
         setTimeout(() => {
             const aiResponse: Message = {
@@ -115,19 +117,190 @@ Please upload the next document, or let me know if you have any questions.`,
         }, 1500);
     };
 
+    const handleTestTransaction = async () => {
+        try {
+            // Create a structured data string for the transaction
+            const transactionData = JSON.stringify({
+                type: "TEST_TRANSACTION",
+                timestamp: new Date().toISOString(),
+                user: localStorage.getItem('userEmail') || 'anonymous',
+                app: "earth-credits-hub"
+            });
+            
+            console.log("Sending test transaction...");
+            setIsAiTyping(true); // Show loading state
+            
+            const { signature, error } = await sendTransaction(transactionData);
+
+            if (signature) {
+                console.log("Test transaction successful with signature:", signature);
+                toast({
+                    title: "Transaction Successful!",
+                    description: `Data recorded on-chain. Signature: ${signature.substring(0, 12)}...`,
+                });
+                
+                // Add a message to the chat about the successful transaction
+                setMessages(prev => [
+                    ...prev, 
+                    {
+                        id: Date.now(),
+                        text: `💰 Transaction successful! Your test transaction has been recorded on the Solana blockchain with signature: ${signature.substring(0, 10)}...`,
+                        sender: 'ai'
+                    }
+                ]);
+            }
+
+            if (error) {
+                console.error("Transaction error:", error);
+                toast({
+                    title: "Transaction Failed",
+                    description: error.message || "Unknown error occurred",
+                    variant: "destructive",
+                });
+                
+                // Add a message to the chat about the failed transaction
+                setMessages(prev => [
+                    ...prev, 
+                    {
+                        id: Date.now(),
+                        text: `❌ Transaction failed: ${error.message || "Unknown error occurred"}. Please make sure your wallet is connected and has sufficient funds.`,
+                        sender: 'ai'
+                    }
+                ]);
+            }
+        } catch (e) {
+            console.error("Error in transaction handler:", e);
+            const errorMessage = e instanceof Error ? e.message : "Unknown error occurred";
+            
+            toast({
+                title: "Transaction Error",
+                description: errorMessage,
+                variant: "destructive",
+            });
+            
+            // Add a message to the chat about the error
+            setMessages(prev => [
+                ...prev, 
+                {
+                    id: Date.now(),
+                    text: `❌ Error during transaction: ${errorMessage}. Please try again later.`,
+                    sender: 'ai'
+                }
+            ]);
+        } finally {
+            setIsAiTyping(false); // Hide loading state
+        }
+    };
+
+    const handleAirdrop = async () => {
+        try {
+            console.log("Requesting airdrop...");
+            setIsAiTyping(true); // Show loading state
+            
+            const { signature, error } = await requestAirdrop();
+
+            if (signature) {
+                console.log("Airdrop successful with signature:", signature);
+                toast({
+                    title: "Airdrop Successful!",
+                    description: `1 SOL added to your wallet. Signature: ${signature.substring(0, 12)}...`,
+                });
+                
+                // Update balance
+                const newBalance = await getBalance();
+                setBalance(newBalance);
+                
+                // Add a message to the chat about the successful airdrop
+                setMessages(prev => [
+                    ...prev, 
+                    {
+                        id: Date.now(),
+                        text: `🪂 Airdrop successful! You now have ${newBalance.toFixed(4)} SOL in your wallet. You can now test transactions!`,
+                        sender: 'ai'
+                    }
+                ]);
+            }
+
+            if (error) {
+                console.error("Airdrop error:", error);
+                toast({
+                    title: "Airdrop Failed",
+                    description: error.message || "Unknown error occurred",
+                    variant: "destructive",
+                });
+                
+                // Add a message to the chat about the failed airdrop
+                setMessages(prev => [
+                    ...prev, 
+                    {
+                        id: Date.now(),
+                        text: `❌ Airdrop failed: ${error.message || "Unknown error occurred"}. Please try again later.`,
+                        sender: 'ai'
+                    }
+                ]);
+            }
+        } catch (e) {
+            console.error("Error in airdrop handler:", e);
+            const errorMessage = e instanceof Error ? e.message : "Unknown error occurred";
+            
+            toast({
+                title: "Airdrop Error",
+                description: errorMessage,
+                variant: "destructive",
+            });
+            
+            // Add a message to the chat about the error
+            setMessages(prev => [
+                ...prev, 
+                {
+                    id: Date.now(),
+                    text: `❌ Error during airdrop: ${errorMessage}. Please try again later.`,
+                    sender: 'ai'
+                }
+            ]);
+        } finally {
+            setIsAiTyping(false); // Hide loading state
+        }
+    };
+
+    const updateBalance = async () => {
+        const newBalance = await getBalance();
+        setBalance(newBalance);
+    };
+
+    // Update balance when component mounts
+    React.useEffect(() => {
+        updateBalance();
+    }, [getBalance]);
+
     return (
         <div className="min-h-screen w-full bg-neutral-950 relative antialiased">
             <div className="relative z-10 w-full">
                 <DashboardHeader
                     title="NGO Project Portal"
                     subtitle="Submit your project details using our AI assistant below."
-                />
+                >
+                    <div className="flex items-center gap-2">
+                        <div className="text-sm text-gray-400 flex items-center gap-1">
+                            <Wallet className="h-3 w-3"/>
+                            {balance.toFixed(4)} SOL
+                        </div>
+                        <Button variant="outline" size="sm" onClick={handleAirdrop} disabled={isSending}>
+                            <Coins className="h-4 w-4 mr-2"/>
+                            {isSending ? 'Requesting...' : 'Get Free SOL'}
+                        </Button>
+                         <Button variant="outline" size="sm" onClick={handleTestTransaction} disabled={isSending}>
+                            <Send className="h-4 w-4 mr-2"/>
+                            {isSending ? 'Sending...' : 'Test Tx'}
+                        </Button>
+                        <WalletMultiButton />
+                    </div>
+                </DashboardHeader>
                 <main className="max-w-5xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8">
                     <Chatbot
                         messages={messages}
                         isAiTyping={isAiTyping}
                         onSendMessage={handleSendMessage}
-                        // ## PASS THE NEW FUNCTION AS A PROP ##
                         onFileUpload={handleFileUpload}
                     />
                 </main>

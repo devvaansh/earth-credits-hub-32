@@ -21,9 +21,10 @@ const ngoData = {
 interface DashboardHeaderProps {
   title: string;
   subtitle: string;
+  children?: React.ReactNode; // Add children prop
 }
 
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle }) => {
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, children }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const userEmail = localStorage.getItem('userEmail');
@@ -63,6 +64,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle }) =>
 
               {/* Right Side: User Actions */}
               <div className="flex items-center space-x-4">
+                {/* Render children here */}
+                {children}
+
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -111,4 +115,3 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle }) =>
 };
 
 export default DashboardHeader;
-
