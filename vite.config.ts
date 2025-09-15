@@ -6,8 +6,20 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
+    // Your existing host and port settings are fine for Render.
     host: "::",
     port: 8080,
+
+    // Added this to fix the "Blocked request" error.
+    allowedHosts: [
+      'earth-credits-hub-32.onrender.com'
+    ],
+    
+    // This is crucial for Hot Module Replacement (HMR) to work correctly
+    // behind Render's HTTPS proxy.
+    hmr: {
+      clientPort: 443
+    }
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean
