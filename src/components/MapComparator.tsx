@@ -6,6 +6,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Map, Layers, Image as ImageIcon, AlertTriangle, Camera } from 'lucide-react';
+// Corrected line
+import mapImage from '@/assets/assets23.jpg'; // Added image import
 
 interface MapLayer {
   id: string;
@@ -184,16 +186,12 @@ const MapComparator: React.FC<MapComparatorProps> = ({
           <div className="aspect-[16/10] bg-muted rounded-lg relative border-2 border-dashed border-border overflow-hidden">
             {/* Map Placeholder */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <Map className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium text-muted-foreground">Interactive Map View</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Project Boundaries: {projectBounds.length} coordinates
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Mode: {comparisonMode} | Analysis: {showAnalysis ? 'ON' : 'OFF'}
-                </p>
-              </div>
+              {/* Image added here, replacing the old placeholder content */}
+              <img 
+                src={mapImage} 
+                alt="Satellite map placeholder" 
+                className="w-full h-full object-cover" 
+              />
             </div>
 
             {/* Photo Pins Overlay */}
@@ -225,7 +223,7 @@ const MapComparator: React.FC<MapComparatorProps> = ({
               >
                 <div className="flex items-center space-x-1">
                   {getAnalysisIcon(area.type)}
-                  <span className="text-xs font-medium capitalize">{area.type}</span>
+                  <span className="text-xs colo font-medium capitalize text-orange-700">{area.type}</span>
                 </div>
               </div>
             ))}
