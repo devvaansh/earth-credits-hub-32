@@ -1,24 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CheckCircle, XCircle, MessageSquare, TrendingUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, MessageSquare, TrendingUp, FileSignature, Loader2, ShieldCheck, X, ImageIcon, MapPin } from 'lucide-react';
 import DashboardHeader from './DashboardHeader';
 import EvidenceHub from './EvidenceHub';
 
-// FONT NOTE: For this to work, ensure a modern font like 'Inter' is imported in your project's
-// global CSS file (e.g., index.css) and configured in `tailwind.config.js`.
-// Example for `index.css`: @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-// Example for `tailwind.config.js`:
-// theme: {
-//   extend: {
-//     fontFamily: {
-//       sans: ['Inter', 'sans-serif'],
-//     },
-//   },
-// },
+// NEW: Import statements for the images
+import mapSnapshotImage from '@/assets/assets23.jpg';
+import solTokenImage from '@/assets/sol.webp';
 
 
 //=========== TYPE DEFINITIONS for TypeScript ===========//
@@ -50,7 +42,7 @@ interface Document {
 }
 
 interface MapLayer {
-  id: string;
+  id:string;
   name: string;
   type: 'satellite' | 'photo' | 'analysis';
   date: string;
@@ -121,7 +113,10 @@ const ProjectVerificationWorkspace: React.FC = () => {
   const [projectStatus, setProjectStatus] = useState<ProjectStatus>('Pending');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
-  // Mock project data with the defined ProjectData type
+  const [isSigningModalOpen, setIsSigningModalOpen] = useState<boolean>(false);
+  const [signingStep, setSigningStep] = useState<'confirm' | 'processing' | 'complete'>('confirm');
+  const [transactionHash, setTransactionHash] = useState<string>('');
+
   const projectData: ProjectData = {
     id: projectId || '1',
     name: 'Mangrove Restoration Project',
@@ -152,17 +147,34 @@ const ProjectVerificationWorkspace: React.FC = () => {
     auditTrail: [{ id: '1', timestamp: '2024-01-15 11:40 AM', actor: 'NGO', action: 'Project Submitted', details: 'Initial submission' }],
     messages: [{ id: '1', sender: 'Ocean Conservation NGO', senderType: 'ngo', message: 'Hello, we have submitted our project.', timestamp: '2024-01-15 12:00 PM', read: true }]
   };
+  
+  const handleApprove = () => {
+    setIsSigningModalOpen(true);
+  };
 
-  const handleApprove = async () => {
+  const handleConfirmSign = () => {
     setIsProcessing(true);
+    setSigningStep('processing');
+    
     setTimeout(() => {
+      const mockTxHash = `0x${[...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+      setTransactionHash(mockTxHash);
+      setSigningStep('complete');
       setProjectStatus('Approved');
       toast({
-        title: 'Project Approved',
-        description: 'The project will now proceed to carbon credit issuance.',
+        title: "Transaction Successful",
+        description: "Carbon credits have been minted on the Solana blockchain.",
       });
       setIsProcessing(false);
-    }, 2000);
+    }, 3500);
+  };
+
+  const handleCloseModal = () => {
+    setIsSigningModalOpen(false);
+    setTimeout(() => {
+      setSigningStep('confirm');
+      setTransactionHash('');
+    }, 300);
   };
 
   const handleReject = async () => {
@@ -208,7 +220,6 @@ const ProjectVerificationWorkspace: React.FC = () => {
   };
 
   return (
-    // FONT STYLE: Applied a modern, sans-serif font class for better readability.
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background p-4 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         <DashboardHeader 
@@ -219,19 +230,16 @@ const ProjectVerificationWorkspace: React.FC = () => {
         <Button 
           variant="ghost" 
           onClick={() => navigate('/verifier-dashboard')}
-          // UI ENHANCEMENT: Added transition and subtle hover effect for better user feedback.
           className="mb-4 text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Dashboard
         </Button>
-
-        {/* UI ENHANCEMENT: Added hover effects for a more interactive, "lifting" feel. */}
+        
         <Card className="shadow-lg border-primary/20 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
               <div>
-                {/* FONT STYLE: Increased font weight for the title to create better visual hierarchy. */}
                 <CardTitle className="text-2xl font-semibold text-foreground">{projectData.name}</CardTitle>
                 <p className="text-muted-foreground mt-1">
                   ID: {projectData.id} • Submitted by <span className="font-medium text-foreground/80">{projectData.ngoName}</span>
@@ -244,7 +252,6 @@ const ProjectVerificationWorkspace: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-             {/* UI ENHANCEMENT: Added a subtle border to separate summary items visually and improved styling. */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-border -mx-6 px-6">
               <div className="flex items-center space-x-3 pt-4 md:pt-0">
                 <TrendingUp className="h-6 w-6 text-primary" />
@@ -278,7 +285,6 @@ const ProjectVerificationWorkspace: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* UI ENHANCEMENT: Added hover effect to the card. */}
         <Card className="shadow-lg border-accent/20 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
           <CardHeader>
             <CardTitle className="font-semibold">Verification Decision</CardTitle>
@@ -288,17 +294,16 @@ const ProjectVerificationWorkspace: React.FC = () => {
               <Button
                 onClick={handleApprove}
                 disabled={isProcessing || projectStatus !== 'Pending'}
-                // UI ENHANCEMENT: Added transitions and a subtle scale-up on hover.
                 className="bg-success hover:bg-success/90 text-success-foreground transition-all duration-200 hover:scale-105"
               >
-                {isProcessing ? 'Processing...' : <><CheckCircle className="h-4 w-4 mr-2" />Approve Project</>}
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Project
               </Button>
               
               <Button
                 variant="destructive"
                 onClick={handleReject}
                 disabled={isProcessing || projectStatus !== 'Pending'}
-                // UI ENHANCEMENT: Added transitions and a subtle scale-up on hover.
                 className="transition-all duration-200 hover:scale-105"
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -309,7 +314,6 @@ const ProjectVerificationWorkspace: React.FC = () => {
                 variant="outline"
                 onClick={handleRequestInfo}
                 disabled={isProcessing || projectStatus !== 'Pending'}
-                // UI ENHANCEMENT: Added transitions and a subtle scale-up on hover.
                 className="transition-all duration-200 hover:scale-105 hover:bg-accent"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
@@ -319,9 +323,85 @@ const ProjectVerificationWorkspace: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* NOTE: The EvidenceHub component would also benefit from similar hover effects on its internal elements. */}
         <EvidenceHub projectData={projectData} />
       </div>
+
+      {isSigningModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <Card className="w-full max-w-xl shadow-2xl animate-in fade-in-0 zoom-in-95">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <FileSignature className="h-5 w-5 mr-2 text-primary" />
+                  Sign Contract & Issue Credits
+                </CardTitle>
+                <Button variant="ghost" size="icon" onClick={handleCloseModal} disabled={isProcessing}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+
+              {signingStep === 'confirm' && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-sm font-semibold">Project Evidence Snapshot</p>
+                      {/* MODIFIED: Replaced placeholder with actual image */}
+                      <div className="aspect-video bg-muted/50 rounded-lg overflow-hidden">
+                        <img src={mapSnapshotImage} alt="Project map snapshot" className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                       <p className="text-sm font-semibold">Digital Asset Preview</p>
+                       {/* MODIFIED: Replaced placeholder with actual image */}
+                       <div className="aspect-video bg-muted/50 rounded-lg overflow-hidden">
+                         <img src={solTokenImage} alt="Solana carbon credit token" className="w-full h-full object-cover" />
+                       </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-3 space-y-2 text-sm">
+                    <div className="flex justify-between"><span>Project:</span> <span className="font-medium text-right">{projectData.name}</span></div>
+                    <div className="flex justify-between"><span>Credits to Mint:</span> <span className="font-bold text-success text-right">{projectData.carbonClaim.toLocaleString()} CO₂e Tokens</span></div>
+                    <div className="flex justify-between"><span>Network Fee (Solana):</span> <span className="font-mono text-muted-foreground text-right">~0.00005 SOL</span></div>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button variant="outline" className="w-full" onClick={handleCloseModal}>Cancel</Button>
+                    <Button className="w-full bg-primary hover:bg-primary/90" onClick={handleConfirmSign}>Confirm & Sign</Button>
+                  </div>
+                </div>
+              )}
+
+              {signingStep === 'processing' && (
+                <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px]">
+                  <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                  <p className="font-semibold text-lg">Processing Transaction</p>
+                  <p className="text-sm text-muted-foreground">
+                    Broadcasting to the Solana network. Please wait for confirmation.
+                  </p>
+                </div>
+              )}
+
+              {signingStep === 'complete' && (
+                <div className="flex flex-col items-center justify-center text-center p-6 space-y-4 min-h-[300px]">
+                  <ShieldCheck className="h-14 w-14 text-success" />
+                  <p className="font-semibold text-xl">Transaction Successful!</p>
+                  <p className="text-sm text-muted-foreground">
+                    {projectData.carbonClaim.toLocaleString()} carbon credits have been successfully minted.
+                  </p>
+                  <div className="w-full bg-muted/50 p-3 rounded-md text-center">
+                    <p className="text-xs text-muted-foreground">Solana Transaction Signature</p>
+                    <p className="font-mono text-xs break-all">{transactionHash}</p>
+                  </div>
+                  <Button className="w-full mt-4" onClick={handleCloseModal}>Close</Button>
+                </div>
+              )}
+
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
