@@ -2,9 +2,10 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, User, Send, Paperclip } from "lucide-react";
+import { Bot, User, Send, Paperclip, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch"; 
 import { GenerativeShimmerStyle } from "./ui/GenerativeShimmerStyle";
 import ReactMarkdown from 'react-markdown';
 import { TextGenerateEffect } from './ui/text-generate-effect';
@@ -19,12 +20,11 @@ const itemVariants = {
 };
 
 // --- Type Definitions for props ---
-// ## 1. UPDATED Message INTERFACE TO HANDLE DOCUMENT OBJECTS ##
 interface Message {
     id: number | string;
     text: string;
     sender: 'user' | 'ai';
-    documents?: { url: string; title: string }[]; // Changed to an array of objects
+    documents?: { url: string; title: string }[];
 }
 
 interface ChatbotProps {
@@ -32,6 +32,8 @@ interface ChatbotProps {
     onSendMessage: (message: string) => void;
     isAiTyping: boolean;
     onFileUpload?: (file: File) => void;
+    isTtsEnabled: boolean;
+    setIsTtsEnabled: (enabled: boolean) => void;
 }
 
 // --- Main Chatbot Component ---
@@ -39,7 +41,9 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     messages,
     onSendMessage,
     isAiTyping,
-    onFileUpload
+    onFileUpload,
+    isTtsEnabled,
+    setIsTtsEnabled
 }) => {
     const [inputValue, setInputValue] = React.useState('');
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
@@ -82,10 +86,25 @@ export const Chatbot: React.FC<ChatbotProps> = ({
     return (
         <div className="flex flex-col h-[85vh] bg-slate-900/50 border border-blue-900/50 rounded-lg shadow-xl">
             <GenerativeShimmerStyle />
-            <div className="p-4 border-b border-blue-900/50 flex items-center">
-                <Bot className="w-6 h-6 text-cyan-400 mr-3" />
-                <h2 className="text-xl font-semibold text-white">VerifiAI Assistant</h2>
+            <div className="p-4 border-b border-blue-900/50 flex items-center justify-between">
+                <div className="flex items-center">
+                    <Bot className="w-6 h-6 text-cyan-400 mr-3" />
+                    <h2 className="text-xl font-semibold text-white">VerifiAI Assistant</h2>
+                </div>
+                <div className="flex items-center gap-2">
+                    {isTtsEnabled ? (
+                        <Volume2 className="h-5 w-5 text-slate-400" />
+                    ) : (
+                        <VolumeX className="h-5 w-5 text-slate-500" />
+                    )}
+                    <Switch
+                        checked={isTtsEnabled}
+                        onCheckedChange={setIsTtsEnabled}
+                        aria-label="Toggle text-to-speech"
+                    />
+                </div>
             </div>
+            
             <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
                 <div className="flex flex-col space-y-4">
                     <AnimatePresence>
@@ -116,7 +135,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                                                     </div>
                                                 )}
                                                 
-                                                {/* ## 2. UPDATED DISPLAY LOGIC FOR VERTICAL LAYOUT WITH HEADINGS ## */}
                                                 {msg.documents && msg.documents.length > 0 && (
                                                     <div className="mt-4 flex flex-col space-y-4 max-h-96 overflow-y-auto">
                                                         {msg.documents.map((doc, i) => (
@@ -147,7 +165,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                             );
                         })}
                     </AnimatePresence>
-                    {isAiTyping && (
+                     {isAiTyping && (
                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-3 justify-start">
                             <div className="w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center flex-shrink-0">
                                 <Bot className="w-5 h-5 text-cyan-400" />
@@ -178,7 +196,7 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                     )}
                 </div>
             </div>
-            <div className="p-4 border-t border-blue-900/50">
+             <div className="p-4 border-t border-blue-900/50">
                 <form onSubmit={handleSubmit} className="flex items-center gap-2">
                     <input
                         type="file"

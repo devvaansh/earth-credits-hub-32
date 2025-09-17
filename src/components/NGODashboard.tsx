@@ -11,15 +11,11 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Button } from "@/components/ui/button";
 import { Send, Coins, Wallet } from "lucide-react";
 
-// Document images
 import data1 from "@/assets/data1.png";
 import data2 from "@/assets/data2.png";
 import data3 from "@/assets/data3.png";
-
-// Satellite images
 import s1 from "@/assets/s1.png";
 import s2 from "@/assets/s2.png";
-
 
 // --- Gemini API Configuration ---
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
@@ -50,12 +46,45 @@ type GeminiHistoryItem = { role: "user" | "model"; parts: { text: string }[] };
 
 // --- Main Dashboard Component ---
 const NGODashboard = () => {
-  const [messages, setMessages] = React.useState<Message[]>([]);
-  const [isAiTyping, setIsAiTyping] = React.useState(false);
-  const [balance, setBalance] = React.useState<number>(0);
-  const { toast } = useToast();
-  const { sendTransaction, requestAirdrop, getBalance, isSending } =
-    useSolanaAction();
+    const [messages, setMessages] = React.useState<Message[]>([]);
+    const [isAiTyping, setIsAiTyping] = React.useState(false);
+    const [balance, setBalance] = React.useState<number>(0);
+    const { toast } = useToast();
+    const { sendTransaction, requestAirdrop, getBalance, isSending } = useSolanaAction();
+    const [isTtsEnabled, setIsTtsEnabled] = React.useState(false);
+
+    // ## TEXT-TO-SPEECH LOGIC ##
+    React.useEffect(() => {
+        const speak = (textToSpeak: string) => {
+            if (!('speechSynthesis' in window)) {
+                console.error("Sorry, your browser does not support text-to-speech.");
+                return;
+            }
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(textToSpeak);
+            utterance.lang = 'en-US';
+            window.speechSynthesis.speak(utterance);
+        };
+
+        const lastMessage = messages[messages.length - 1];
+
+        if (isTtsEnabled && lastMessage && lastMessage.sender === 'ai') {
+            speak(lastMessage.text);
+        }
+
+        return () => {
+            window.speechSynthesis.cancel();
+        };
+
+    }, [messages, isTtsEnabled]);
+
+    React.useEffect(() => {
+        if (!isTtsEnabled) {
+            window.speechSynthesis.cancel();
+        }
+    }, [isTtsEnabled]);
+
 
   React.useEffect(() => {
     setMessages([
@@ -67,7 +96,7 @@ const NGODashboard = () => {
     ]);
   }, []);
 
-  const handleSendMessage = async (userInput: string) => {
+    const handleSendMessage = async (userInput: string) => {
     if (!API_KEY) {
       toast({
         title: "API Key Not Configured",
@@ -86,7 +115,6 @@ const NGODashboard = () => {
     setMessages((prev) => [...prev, userMessage]);
     setIsAiTyping(true);
     
-    // Logic for "List required documents"
     if (userInput.toLowerCase().includes("documents do i need")) {
         setTimeout(() => {
             const docResponse: Message = {
@@ -105,10 +133,8 @@ const NGODashboard = () => {
         return;
     }
 
-    // Logic for "Satellite verification"
     else if (userInput.toLowerCase().includes("satellite verification")) {
         setTimeout(() => {
-            /* ## THIS IS THE ONLY CHANGE: A MORE COMPREHENSIVE EXPLANATION ## */
             const satelliteResponse: Message = {
                 id: Date.now() + 1,
                 sender: 'ai',
@@ -124,8 +150,6 @@ const NGODashboard = () => {
         return;
     }
 
-
-    // Default Gemini API call for all other messages
     try {
       const historyForApi: GeminiHistoryItem[] = [...messages, userMessage]
       .filter(msg => !msg.documents) 
@@ -395,12 +419,14 @@ Please upload the next document, or let me know if you have any questions.`,
           </div>
         </DashboardHeader>
         <main className="max-w-5xl mx-auto space-y-8 p-4 sm:p-6 lg:p-8">
-          <Chatbot
-            messages={messages}
-            isAiTyping={isAiTyping}
-            onSendMessage={handleSendMessage}
-            onFileUpload={handleFileUpload}
-          />
+            <Chatbot
+                messages={messages}
+                isAiTyping={isAiTyping}
+                onSendMessage={handleSendMessage}
+                onFileUpload={handleFileUpload}
+                isTtsEnabled={isTtsEnabled}
+                setIsTtsEnabled={setIsTtsEnabled}
+            />
         </main>
       </div>
       <BackgroundBeams />
