@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { GenerativeShimmerStyle } from "./ui/GenerativeShimmerStyle";
 import ReactMarkdown from 'react-markdown';
-// ## 1. ADDED THE CORRECT IMPORT ##
 import { TextGenerateEffect } from './ui/text-generate-effect';
 
 const containerVariants = {
@@ -20,10 +19,12 @@ const itemVariants = {
 };
 
 // --- Type Definitions for props ---
+// ## 1. UPDATED Message INTERFACE TO HANDLE DOCUMENT OBJECTS ##
 interface Message {
     id: number | string;
     text: string;
     sender: 'user' | 'ai';
+    documents?: { url: string; title: string }[]; // Changed to an array of objects
 }
 
 interface ChatbotProps {
@@ -80,21 +81,16 @@ export const Chatbot: React.FC<ChatbotProps> = ({
 
     return (
         <div className="flex flex-col h-[85vh] bg-slate-900/50 border border-blue-900/50 rounded-lg shadow-xl">
-            {/* This is for the shimmer on the skeleton loader, so it stays */}
             <GenerativeShimmerStyle />
-            
             <div className="p-4 border-b border-blue-900/50 flex items-center">
                 <Bot className="w-6 h-6 text-cyan-400 mr-3" />
                 <h2 className="text-xl font-semibold text-white">VerifiAI Assistant</h2>
             </div>
-
             <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto">
                 <div className="flex flex-col space-y-4">
                     <AnimatePresence>
                         {messages.map((msg, index) => {
-                            // ## 2. ADDED LOGIC TO IDENTIFY THE LAST MESSAGE ##
                             const isLastMessage = index === messages.length - 1;
-
                             return (
                                 <motion.div
                                     key={msg.id}
@@ -111,15 +107,33 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                                     )}
                                     <div className={`max-w-xl p-3 rounded-xl whitespace-pre-wrap ${msg.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300'}`}>
                                         {msg.sender === 'ai' ? (
-                                            // ## 3. CONDITIONAL RENDERING LOGIC ##
-                                            // If it's the last AI message, use the effect. Otherwise, show static markdown.
-                                            isLastMessage ? (
-                                                <TextGenerateEffect words={msg.text} />
-                                            ) : (
-                                                <div className="prose prose-sm prose-invert prose-p:my-2 prose-li:my-1 text-slate-300">
-                                                    <ReactMarkdown>{msg.text}</ReactMarkdown>
-                                                </div>
-                                            )
+                                            <>
+                                                {isLastMessage ? (
+                                                    <TextGenerateEffect words={msg.text} />
+                                                ) : (
+                                                    <div className="prose prose-sm prose-invert prose-p:my-2 prose-li:my-1 text-slate-300">
+                                                        <ReactMarkdown>{msg.text}</ReactMarkdown>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* ## 2. UPDATED DISPLAY LOGIC FOR VERTICAL LAYOUT WITH HEADINGS ## */}
+                                                {msg.documents && msg.documents.length > 0 && (
+                                                    <div className="mt-4 flex flex-col space-y-4 max-h-96 overflow-y-auto">
+                                                        {msg.documents.map((doc, i) => (
+                                                             <div key={i}>
+                                                                <h4 className="text-sm font-semibold text-slate-300 mb-1">{doc.title}</h4>
+                                                                <div className="border border-slate-700 rounded-md overflow-hidden">
+                                                                    <img
+                                                                        src={doc.url}
+                                                                        alt={doc.title}
+                                                                        className="w-full object-contain"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
                                         ) : (
                                             <p>{msg.text}</p>
                                         )}
@@ -133,7 +147,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                             );
                         })}
                     </AnimatePresence>
-
                     {isAiTyping && (
                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-start gap-3 justify-start">
                             <div className="w-8 h-8 rounded-full bg-blue-950 flex items-center justify-center flex-shrink-0">
@@ -146,7 +159,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                             </div>
                         </motion.div>
                     )}
-
                     {messages.length <= 1 && !isAiTyping && (
                         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="pt-4 pb-8">
                            <motion.h3 variants={itemVariants} className="text-md font-semibold text-slate-400 mb-4 text-center">Or try a suggestion...</motion.h3>
@@ -166,7 +178,6 @@ export const Chatbot: React.FC<ChatbotProps> = ({
                     )}
                 </div>
             </div>
-
             <div className="p-4 border-t border-blue-900/50">
                 <form onSubmit={handleSubmit} className="flex items-center gap-2">
                     <input

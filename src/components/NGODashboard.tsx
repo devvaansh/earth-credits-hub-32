@@ -11,6 +11,16 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Button } from "@/components/ui/button";
 import { Send, Coins, Wallet } from "lucide-react";
 
+// Document images
+import data1 from "@/assets/data1.png";
+import data2 from "@/assets/data2.png";
+import data3 from "@/assets/data3.png";
+
+// Satellite images
+import s1 from "@/assets/s1.png";
+import s2 from "@/assets/s2.png";
+
+
 // --- Gemini API Configuration ---
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
@@ -30,7 +40,12 @@ if (API_KEY) {
 }
 
 // --- Type Definitions ---
-type Message = { id: number; text: string; sender: "user" | "ai" };
+type Message = { 
+    id: number | string; 
+    text: string; 
+    sender: "user" | "ai",
+    documents?: { url: string; title: string }[]; 
+};
 type GeminiHistoryItem = { role: "user" | "model"; parts: { text: string }[] };
 
 // --- Main Dashboard Component ---
@@ -70,9 +85,51 @@ const NGODashboard = () => {
     };
     setMessages((prev) => [...prev, userMessage]);
     setIsAiTyping(true);
+    
+    // Logic for "List required documents"
+    if (userInput.toLowerCase().includes("documents do i need")) {
+        setTimeout(() => {
+            const docResponse: Message = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                text: 'Certainly! Here are the core documents required for your project submission:',
+                documents: [
+                    { url: data1, title: 'Legal Registration' },
+                    { url: data2, title: 'Identity' },
+                    { url: data3, title: 'Expenditure' }
+                ],
+            };
+            setMessages(prev => [...prev, docResponse]);
+            setIsAiTyping(false);
+        }, 1500); 
+        return;
+    }
 
+    // Logic for "Satellite verification"
+    else if (userInput.toLowerCase().includes("satellite verification")) {
+        setTimeout(() => {
+            /* ## THIS IS THE ONLY CHANGE: A MORE COMPREHENSIVE EXPLANATION ## */
+            const satelliteResponse: Message = {
+                id: Date.now() + 1,
+                sender: 'ai',
+                text: "Excellent question. Satellite verification is a cornerstone of modern environmental projects, providing unbiased, scientific proof of a project's impact.\n\nThe process begins by acquiring high-resolution satellite imagery of your project area **before** any work starts. This creates a verifiable 'baseline.' Then, over time, new images are captured periodically. Our advanced AI algorithms compare these new images to the baseline to automatically detect and quantify changes, such as growth in mangrove canopy and increases in biomass.\n\nThis data-driven approach ensures that the carbon credits generated are based on real, measurable growth, making the process transparent and trustworthy. Below is a simplified visual guide.",
+                documents: [
+                    { url: s1, title: 'Step 1: High-Resolution Baseline Imagery' },
+                    { url: s2, title: 'Step 2: AI-Powered Change Detection Analysis' }
+                ],
+            };
+            setMessages(prev => [...prev, satelliteResponse]);
+            setIsAiTyping(false);
+        }, 1500);
+        return;
+    }
+
+
+    // Default Gemini API call for all other messages
     try {
-      const historyForApi: GeminiHistoryItem[] = [...messages, userMessage].map(
+      const historyForApi: GeminiHistoryItem[] = [...messages, userMessage]
+      .filter(msg => !msg.documents) 
+      .map(
         (msg) => ({
           role: msg.sender === "ai" ? "model" : "user",
           parts: [{ text: msg.text }],
@@ -142,7 +199,6 @@ Please upload the next document, or let me know if you have any questions.`,
 
   const handleTestTransaction = async () => {
     try {
-      // Create a structured data string for the transaction
       const transactionData = JSON.stringify({
         type: "TEST_TRANSACTION",
         timestamp: new Date().toISOString(),
@@ -151,7 +207,7 @@ Please upload the next document, or let me know if you have any questions.`,
       });
 
       console.log("Sending test transaction...");
-      setIsAiTyping(true); // Show loading state
+      setIsAiTyping(true);
 
       const { signature, error } = await sendTransaction(transactionData);
 
@@ -165,7 +221,6 @@ Please upload the next document, or let me know if you have any questions.`,
           )}...`,
         });
 
-        // Add a message to the chat about the successful transaction
         setMessages((prev) => [
           ...prev,
           {
@@ -187,7 +242,6 @@ Please upload the next document, or let me know if you have any questions.`,
           variant: "destructive",
         });
 
-        // Add a message to the chat about the failed transaction
         setMessages((prev) => [
           ...prev,
           {
@@ -210,7 +264,6 @@ Please upload the next document, or let me know if you have any questions.`,
         variant: "destructive",
       });
 
-      // Add a message to the chat about the error
       setMessages((prev) => [
         ...prev,
         {
@@ -220,14 +273,14 @@ Please upload the next document, or let me know if you have any questions.`,
         },
       ]);
     } finally {
-      setIsAiTyping(false); // Hide loading state
+      setIsAiTyping(false);
     }
   };
 
   const handleAirdrop = async () => {
     try {
       console.log("Requesting airdrop...");
-      setIsAiTyping(true); // Show loading state
+      setIsAiTyping(true);
 
       const { signature, error } = await requestAirdrop();
 
@@ -241,11 +294,9 @@ Please upload the next document, or let me know if you have any questions.`,
           )}...`,
         });
 
-        // Update balance
         const newBalance = await getBalance();
         setBalance(newBalance);
 
-        // Add a message to the chat about the successful airdrop
         setMessages((prev) => [
           ...prev,
           {
@@ -266,7 +317,6 @@ Please upload the next document, or let me know if you have any questions.`,
           variant: "destructive",
         });
 
-        // Add a message to the chat about the failed airdrop
         setMessages((prev) => [
           ...prev,
           {
@@ -289,7 +339,6 @@ Please upload the next document, or let me know if you have any questions.`,
         variant: "destructive",
       });
 
-      // Add a message to the chat about the error
       setMessages((prev) => [
         ...prev,
         {
@@ -299,7 +348,7 @@ Please upload the next document, or let me know if you have any questions.`,
         },
       ]);
     } finally {
-      setIsAiTyping(false); // Hide loading state
+      setIsAiTyping(false);
     }
   };
 
@@ -308,7 +357,6 @@ Please upload the next document, or let me know if you have any questions.`,
     setBalance(newBalance);
   };
 
-  // Update balance when component mounts
   React.useEffect(() => {
     updateBalance();
   }, [getBalance]);
