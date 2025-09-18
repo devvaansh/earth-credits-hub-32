@@ -10,8 +10,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, Leaf, Waves, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+// Import the logo directly from the assets folder.
+// Ensure your logo is at 'src/assets/logob.png' for this to work.
+import companyLogo from '@/assets/logob.png'; 
 
 const ngoData = {
   name: "Green Future Initiative",
@@ -21,7 +25,7 @@ const ngoData = {
 interface DashboardHeaderProps {
   title: string;
   subtitle: string;
-  children?: React.ReactNode; // Add children prop
+  children?: React.ReactNode;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, children }) => {
@@ -40,78 +44,78 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
   };
 
   return (
-    // Outer div for spacing from the top and sides of the screen
-    <div className="w-full px-4 sm:px-6 lg:px-8 pt-4">
-      {/* This div handles the hover-zoom effect */}
-      <div className="w-full transition-all duration-300 ease-in-out hover:scale-[1.01]">
-        {/* 1. The Gradient Border: A div with padding and a gradient background */}
-        <div className="rounded-2xl bg-gradient-to-r from-neutral-700 via-neutral-800 to-neutral-700 p-[1px] shadow-lg transition-all duration-300 hover:from-neutral-600 hover:via-neutral-700 hover:to-neutral-600">
-          {/* 2. The Main Header Content Area */}
-          <div className="w-full rounded-[23px] bg-neutral-950/80 backdrop-blur-sm">
-            <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-8">
-              
-              {/* Left Side: Title and Branding */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 group cursor-pointer">
-                  <Waves className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
-                  <Leaf className="h-8 w-8 text-secondary transition-all duration-300 group-hover:scale-110 group-hover:-rotate-12" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-slate-100">{title}</h1>
-                  <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
-                </div>
-              </div>
-
-              {/* Right Side: User Actions */}
-              <div className="flex items-center space-x-4">
-                {/* Render children here */}
-                {children}
-
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleLogout}
-                  className="transition-all duration-300 ease-in-out group hover:bg-destructive/90 hover:text-destructive-foreground hover:border-destructive/90 hover:shadow-md hover:shadow-destructive/40"
-                >
-                  <LogOut className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:rotate-6" />
-                  Logout
-                </Button>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full transition-transform duration-300 ease-in-out hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-background">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>{ngoData.initials}</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{ngoData.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground pt-1">
-                          {userEmail}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="group cursor-pointer transition-colors">
-                      <User className="mr-2 h-4 w-4 text-muted-foreground transition-all duration-300 group-hover:text-primary" />
-                      <span className="transition-all duration-300 group-hover:text-primary">Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="group cursor-pointer transition-colors">
-                      <Settings className="mr-2 h-4 w-4 text-muted-foreground transition-all duration-300 group-hover:text-primary" />
-                      <span className="transition-all duration-300 group-hover:text-primary">Settings</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+    // Main header container: fixed, full-width, with padding to contain the cylindrical element
+    <header className="w-full sticky top-0 z-50 py-3 px-4 sm:px-6 lg:px-8">
+      {/* Cylindrical content wrapper: applies the new background color and rounded corners */}
+      <div 
+        className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6 sm:px-8 lg:px-10 rounded-full shadow-lg"
+        style={{ backgroundColor: '#9370db' }} // Apply custom purple background
+      >
+        
+        {/* Left Side: Title and Branding */}
+        <div className="flex items-center space-x-4">
+          {/* Container for the logo with hover effect */}
+          <div 
+            className="group cursor-pointer" 
+            onClick={() => navigate('/dashboard')}
+          >
+            {/* The img tag for your logo, now styled to be circular */}
+            <img 
+              src={companyLogo} 
+              alt="Company Logo" 
+              className="h-10 w-10 rounded-full object-contain transition-transform duration-300 ease-in-out group-hover:scale-110" 
+            />
+          </div>
+          <div>
+            {/* Text color changed to white for contrast */}
+            <h1 className="text-xl font-semibold tracking-tight text-white">{title}</h1>
+            <p className="text-purple-100 mt-0.5 text-sm">{subtitle}</p>
           </div>
         </div>
+
+        {/* Right Side: User Actions */}
+        <div className="flex items-center space-x-2">
+          {children}
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-10 w-10 rounded-full group transition-transform duration-300 ease-in-out hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white">
+                <Avatar className="h-9 w-9 border-2 border-transparent group-hover:border-white/50 transition-colors duration-300">
+                  {/* Avatar fallback colors adjusted for purple background */}
+                  <AvatarFallback className="bg-purple-700 text-purple-100 font-semibold">{ngoData.initials}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64" align="end" forceMount>
+              <DropdownMenuLabel className="font-normal">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium leading-none text-slate-900">{ngoData.name}</p>
+                  <p className="text-xs leading-none text-slate-500 pt-1">
+                    {userEmail}
+                  </p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="group cursor-pointer">
+                <User className="mr-2 h-4 w-4 text-slate-500 transition-colors duration-200 group-hover:text-purple-600" />
+                <span className="transition-colors duration-200 group-hover:text-purple-600">Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="group cursor-pointer">
+                <Settings className="mr-2 h-4 w-4 text-slate-500 transition-colors duration-200 group-hover:text-purple-600" />
+                <span className="transition-colors duration-200 group-hover:text-purple-600">Settings</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="group cursor-pointer" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4 text-slate-500 transition-colors duration-200 group-hover:text-red-500" />
+                <span className="transition-colors duration-200 group-hover:text-red-500">Logout</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-    </div>
+    </header>
   );
 };
 
 export default DashboardHeader;
+
