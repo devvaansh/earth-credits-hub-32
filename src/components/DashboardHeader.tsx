@@ -13,9 +13,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Import the logo directly from the assets folder.
-// Ensure your logo is at 'src/assets/logob.png' for this to work.
-import companyLogo from '@/assets/logob.png'; 
+// ## UPDATED LOGO IMPORT ##
+// Using a placeholder URL to resolve the local pathing issue in the environment.
+const companyLogo = 'https://placehold.co/100x100/FFFFFF/9370db?text=GF'; 
 
 const ngoData = {
   name: "Green Future Initiative",
@@ -40,7 +40,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
       title: "Logged out successfully",
       description: "You have been signed out of your account",
     });
-    navigate('/');
+    navigate('/login');
   };
 
   return (
@@ -63,7 +63,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
             <img 
               src={companyLogo} 
               alt="Company Logo" 
-              className="h-10 w-10 rounded-full object-contain transition-transform duration-300 ease-in-out group-hover:scale-110" 
+              className="h-10 w-10 rounded-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110" 
             />
           </div>
           <div>
@@ -76,6 +76,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
         {/* Right Side: User Actions */}
         <div className="flex items-center space-x-2">
           {children}
+
+          {/* LOGOUT BUTTON WITH UPDATED STYLING */}
+          <Button
+            size="sm"
+            onClick={handleLogout}
+            className="bg-purple-100 text-purple-700 font-semibold transition-all duration-300 group hover:bg-purple-200 hover:shadow-inner"
+          >
+            <LogOut className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:-translate-x-1" />
+            Logout
+          </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
