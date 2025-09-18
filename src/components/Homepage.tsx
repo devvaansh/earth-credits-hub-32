@@ -1,5 +1,3 @@
-// 📁 Homepage.tsx
-
 import React, { Suspense, lazy, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,12 +6,12 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { ArrowRight, CheckCircle, Waves, Database, Satellite, Users } from 'lucide-react';
 import { ColourfulText } from './ui/colorfultext';
+import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
 
 // Use React.lazy for dynamic import in a Vite/CRA project.
 const World = lazy(() => import('@/components/ui/globe').then((m) => ({ default: m.World })));
 
-// --- OPTIMIZATION 1: Move static configurations outside the component ---
-// This prevents these large objects from being recreated on every render.
+// --- STATIC CONFIGURATIONS ---
 const globeConfig = {
   pointSize: 4,
   globeColor: "#062056",
@@ -53,10 +51,9 @@ const benefitItems = [
   'Directly connects funders with high-impact local projects.',
 ];
 
-// --- OPTIMIZATION 2: Split sections into memoized components ---
-// This prevents sections from re-rendering if the parent component's state changes.
+// --- MEMOIZED COMPONENTS ---
 const HeroSection = memo(() => (
-  <section className="pt-24 pb-28">
+  <section className="pt-24 pb-28 bg-black">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <div className="space-y-6">
@@ -64,9 +61,9 @@ const HeroSection = memo(() => (
             <Waves className="h-5 w-5" />
             <span className="text-sm font-semibold tracking-widest uppercase">Blue Carbon Ecosystems</span>
           </div>
-          <h1 className="text-5xl sm:text-6xl font-bold tracking-tighter leading-tight">
-            The Trust Layer for <br />
-            <ColourfulText text="Blue Carbon" />
+          <h1 className="text-5xl sm:text-6xl font-bold tracking-tighter leading-tight  text-fuchsia-500">
+            The Trust Layer for BLUE CARBON <br />
+           
           </h1>
           <p className="text-lg text-slate-300 max-w-lg">
             Our platform uses blockchain and satellite-based AI to provide transparent, verifiable, and community-focused monitoring for blue carbon ecosystem restoration.
@@ -94,42 +91,44 @@ const HeroSection = memo(() => (
 ));
 
 const FeaturesSection = memo(() => (
-  <section id="features" className="py-24 bg-slate-900/70 backdrop-blur-md">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <h2 className="text-4xl font-bold tracking-tighter text-white mb-4">A New Standard for Environmental Verification</h2>
-        <p className="text-lg text-slate-300">We integrate advanced technology to bring unparalleled trust and efficiency to the blue carbon marketplace.</p>
+  <section id="features" className="relative py-24 bg-black backdrop-blur-md overflow-hidden">
+    <BackgroundBeamsWithCollision>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-4xl font-bold tracking-tighter text-white mb-4">A New Standard for Environmental Verification</h2>
+          <p className="text-lg text-slate-300">We integrate advanced technology to bring unparalleled trust and efficiency to the blue carbon marketplace.</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
+            <CardContent className="p-8 space-y-4 text-left">
+              <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
+                <Satellite className="h-6 w-6 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Smart MRV</h3>
+              <p className="text-slate-400">Leverage satellite imagery and AI to automatically verify project data, ensuring accuracy and reducing manual overhead.</p>
+            </CardContent>
+          </Card>
+          <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-emerald-500/50 transition-all duration-300">
+            <CardContent className="p-8 space-y-4 text-left">
+              <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-emerald-500 transition-colors">
+                <Database className="h-6 w-6 text-emerald-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Immutable Ledger</h3>
+              <p className="text-slate-400">Every transaction and verified credit is recorded on a blockchain, creating a tamper-proof audit trail for all stakeholders.</p>
+            </CardContent>
+          </Card>
+          <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
+            <CardContent className="p-8 space-y-4 text-left">
+              <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
+                <Users className="h-6 w-6 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-white">Community Empowerment</h3>
+              <p className="text-slate-400">Onboard local communities, NGOs, and panchayats to drive restoration efforts and ensure equitable benefit sharing.</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
-          <CardContent className="p-8 space-y-4 text-left">
-            <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
-              <Satellite className="h-6 w-6 text-cyan-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white">Smart MRV</h3>
-            <p className="text-slate-400">Leverage satellite imagery and AI to automatically verify project data, ensuring accuracy and reducing manual overhead.</p>
-          </CardContent>
-        </Card>
-        <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-emerald-500/50 transition-all duration-300">
-          <CardContent className="p-8 space-y-4 text-left">
-            <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-emerald-500 transition-colors">
-              <Database className="h-6 w-6 text-emerald-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white">Immutable Ledger</h3>
-            <p className="text-slate-400">Every transaction and verified credit is recorded on a blockchain, creating a tamper-proof audit trail for all stakeholders.</p>
-          </CardContent>
-        </Card>
-        <Card className="group border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-cyan-500/50 transition-all duration-300">
-          <CardContent className="p-8 space-y-4 text-left">
-            <div className="w-12 h-12 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 group-hover:border-cyan-500 transition-colors">
-              <Users className="h-6 w-6 text-cyan-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-white">Community Empowerment</h3>
-            <p className="text-slate-400">Onboard local communities, NGOs, and panchayats to drive restoration efforts and ensure equitable benefit sharing.</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </BackgroundBeamsWithCollision>
   </section>
 ));
 
@@ -161,8 +160,8 @@ const BenefitsSection = memo(() => (
           </div>
         </div>
         <div className="space-y-6">
-          <h2 className="text-4xl font-bold tracking-tighter text-white">
-            Designed for <span className="bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">Impact and Scale</span>
+          <h2 className="text-4xl font-bold tracking-tighter text-lime-500">
+            Designed for <span className="bg-gradient-to-r text-lime-500 bg-clip-text text-transparent">Impact and Scale</span>
           </h2>
           <p className="text-lg text-slate-300">Our unified platform streamlines the entire lifecycle of a blue carbon project, from planting to credit issuance.</p>
           <div className="space-y-3 pt-2">
@@ -204,7 +203,6 @@ const Homepage = () => {
       <Navbar />
 
       <div className="fixed inset-0 z-0 overflow-hidden">
-        {/* --- OPTIMIZATION 3: Added 'will-change' for smoother animations --- */}
         <div className="blurry-dot one"></div>
         <div className="blurry-dot two"></div>
         <div className="blurry-dot three"></div>
@@ -214,8 +212,7 @@ const Homepage = () => {
         <HeroSection />
         <FeaturesSection />
         <BenefitsSection />
-        {/* NOTE: I left the 'About' section inline as an example of what was refactored, but it could also be a memoized component. */}
-        <section id="about" className="py-24 bg-slate-900/70 backdrop-blur-md">
+        <section id="about" className="py-24 bg-black backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-4xl font-bold tracking-tighter text-white mb-4">The Power of Coastal Ecosystems</h2>
@@ -223,19 +220,19 @@ const Homepage = () => {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
-                <div className="text-4xl font-bold text-cyan-400 tracking-tighter">10x</div>
+                <div className="text-4xl font-bold text-lime-500 tracking-tighter">10x</div>
                 <div className="text-sm text-slate-400 mt-1">More Carbon Storage</div>
               </div>
               <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
-                <div className="text-4xl font-bold text-emerald-400 tracking-tighter">100%</div>
+                <div className="text-4xl font-bold text-lime-500 tracking-tighter">100%</div>
                 <div className="text-sm text-slate-400 mt-1">On-Chain Verification</div>
               </div>
               <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
-                <div className="text-4xl font-bold text-cyan-400 tracking-tighter">70%</div>
+                <div className="text-4xl font-bold text-lime-500 tracking-tighter">70%</div>
                 <div className="text-sm text-slate-400 mt-1">Reduced MRV Costs</div>
               </div>
               <div className="p-6 text-center border border-slate-800 bg-slate-900/50 rounded-lg">
-                <div className="text-4xl font-bold text-emerald-400 tracking-tighter">24/7</div>
+                <div className="text-4xl font-bold text-lime-500 tracking-tighter">24/7</div>
                 <div className="text-sm text-slate-400 mt-1">AI-Powered Monitoring</div>
               </div>
             </div>
@@ -246,15 +243,11 @@ const Homepage = () => {
 
       <Footer />
       
-      {/* OPTIMIZATION 4: Moved styles to a style block for clarity. 
-        For best practice, move this to your global CSS file (e.g., index.css).
-      */}
       <style>{`
         .blurry-dot {
           position: absolute;
           border-radius: 9999px;
           filter: blur(128px); /* 3xl */
-          /* This tells the browser to prepare for animation, often moving it to the GPU */
           will-change: transform, opacity;
         }
         .blurry-dot.one {
