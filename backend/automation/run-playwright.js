@@ -1,56 +1,99 @@
 const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs');
 
-async function runAutomation() {
-    const projectId = process.argv[2];
+const projectId = process.argv[2]; // Get projectId from the controller
+const authPath = path.join(__dirname, '..', 'auth.json'); // Path to the auth file
+
+// --- Your custom visuals ---
+const customCSS = `
+  html {
+    background: linear-gradient(-45deg, #0a0328, #360b41, #022c3b, #011322);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+    font-family: 'Courier New', Courier, monospace !important;
+  }
+  @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+  * { 
+    color: #00ffcc !important; 
+    background-color: rgba(14, 2, 36, 0.2) !important; 
+    border: 1px solid rgba(0, 255, 204, 0.3) !important; 
+    border-radius: 4px; 
+    backdrop-filter: blur(2px); 
+    text-shadow: 0 0 5px #00ffcc; 
+    transition: all 0.2s ease-in-out; 
+  }
+  *:hover { 
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.8), inset 0 0 5px rgba(0, 255, 204, 0.5) !important; 
+    background-color: rgba(14, 2, 36, 0.5) !important; 
+  }
+  img, video, svg, .lucide { border: none !important; }
+  body { cursor: crosshair; }
+  ::-webkit-scrollbar { display: none; }
+`;
+const customJS = `
+  console.log('[AI] Neuro-Visual Overlay Injected.');
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'fixed'; canvas.style.top = '0'; canvas.style.left = '0'; canvas.style.width = '100vw'; canvas.style.height = '100vh'; canvas.style.zIndex = '-1'; canvas.style.pointerEvents = 'none';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  let particles = [];
+  for (let i = 0; i < 50; i++) { particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5, size: Math.random() * 2 + 1 }); }
+  function animateParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.x += p.vx; p.y += p.vy; if (p.x < 0 || p.x > canvas.width) p.vx *= -1; if (p.y < 0 || p.y > canvas.height) p.vy *= -1; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0, 255, 204, 0.5)'; ctx.fill(); });
+    requestAnimationFrame(animateParticles);
+  }
+  animateParticles();
+`;
+
+// --- Main Playwright script ---
+(async () => {
+  let browser;
+  try {
+    if (!fs.existsSync(authPath)) {
+      throw new Error('auth.json not found. Please run "node create-auth-state.js" in the backend directory first.');
+    }
     if (!projectId) {
-        console.error('Error: No Project ID provided.');
-        return;
+      throw new Error('No Project ID was provided to the script.');
     }
 
-    let browser;
-    try {
-        console.log(`[Playwright] Starting STABLE script for Project #${projectId}`);
-        browser = await chromium.launch({ headless: false });
-        const context = await browser.newContext();
-        const page = await context.newPage();
-        await page.setViewportSize({ width: 1300, height: 800 });
+    browser = await chromium.launch({ headless: false, slowMo: 400 }); // slowMo makes it watchable
+    const context = await browser.newContext({ storageState: authPath });
+    const page = await context.newPage();
+    await page.setViewportSize({ width: 1300, height: 800 });
 
-        // --- STEP 1: LOGIN ---
-        await page.goto('https://earth-credits-hub-32-cn42.vercel.app/login');
-        await page.getByRole('textbox', { name: 'Email' }).fill('verifier@example.com');
-        await page.getByRole('textbox', { name: 'Password' }).fill('verifier@example.com');
-        await page.getByRole('button', { name: 'Sign In' }).click();
+    // --- DYNAMIC NAVIGATION ---
+    // Instead of clicking a row, we go directly to the project URL, which is more reliable.
+    const projectUrl = `https://earth-credits-hub-32-cn42.vercel.app/project/${projectId}`;
+    console.log(`[Playwright] Navigating directly to: ${projectUrl}`);
+    await page.goto(projectUrl, { waitUntil: 'networkidle' });
 
-        // --- STEP 2: WAIT FOR THE DASHBOARD TO BE READY ---
-        // This is the most critical new step.
-        // We wait for a unique element on your dashboard to appear before doing anything else.
-        // I am guessing a selector below. If it fails, you MUST replace it with one from your site.
-        // See instructions below the code block on how to find this.
-        console.log('[Playwright] Login successful. Waiting for the project queue to load...');
-        const dashboardTableLocator = page.locator('.table'); // <-- GUESSING a class for your table
-        await dashboardTableLocator.waitFor({ state: 'visible', timeout: 15000 }); // Wait up to 15 seconds
-        console.log('[Playwright] Project queue is visible.');
+    // Inject the visuals
+    console.log('[Playwright] Injecting custom visuals...');
+    await page.addStyleTag({ content: customCSS });
+    await page.addScriptTag({ content: customJS });
+    console.log('[Playwright] Visuals injected successfully!');
 
-        // --- STEP 3: CLICK THE PROJECT ---
-        // Now that we know the table is loaded, we can safely find and click the button.
-        // This locator finds the first button in the 7th column of the table.
-        const projectActionLocator = dashboardTableLocator.locator('td:nth-child(7) button').first();
-        await projectActionLocator.click();
 
-        await page.waitForURL(`**/project/${projectId}`);
-        console.log(`[Playwright] Successfully navigated to project page for ${projectId}.`);
+    // --- Your Recorded Actions ---
+    await page.getByRole('tab', { name: 'Documents' }).click();
+    await page.getByText('project_methodology.docx').click();
+    await page.getByText('field_photos_2025.zip').click();
+    await page.getByRole('tab', { name: 'Map & Imagery' }).click();
+    await page.locator('html').click();
 
-        // We will stop here for now. Let's confirm this works before adding visuals.
-        await page.waitForTimeout(3000); // Pause on the final page for 3 seconds
+    await page.waitForTimeout(5000); // Final pause
+    console.log(`[Playwright] Automation for ${projectId} completed successfully.`);
 
-    } catch (error) {
-        console.error(`[Playwright] SCRIPT FAILED for ${projectId}:`, error);
-    } finally {
-        if (browser) {
-            await browser.close();
-            console.log('[Playwright] Browser closed.');
-        }
+  } catch (error) {
+    console.error(`[Playwright] SCRIPT FAILED for project ${projectId}:`, error);
+  } finally {
+    if (browser) {
+      await browser.close();
+      console.log('[Playwright] Browser closed.');
     }
-}
+  }
+})();
 
-runAutomation();
