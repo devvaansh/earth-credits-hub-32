@@ -3,12 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
-const ee = require('@google/earthengine'); // <-- ADD THIS
+const ee = require('@google/earthengine');
 
 // Initialize Express app
 const app = express();
 
-// Connect to Database
+// Connect to aDatabase
 connectDB();
 
 // --- GEE AUTHENTICATION ---
@@ -24,22 +24,26 @@ try {
         },
         (err) => console.error('GEE Authentication Error:', err)
     );
-} catch (error) {
+} catch (error)
+{
     console.error('Could not load GEE credentials. Make sure config/gee-credentials.json exists.', error);
 }
 // -------------------------
 
 // Middleware
+// --- FIX: Updated the origin to match your frontend port ---
 app.use(cors({
-    origin: 'http://localhost:5173', 
+    origin: 'http://localhost:8080', 
     credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(express.static('public')); 
 
 // Define Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/satellite', require('./routes/satelliteRoutes')); // <-- ADD THIS
+app.use('/api/satellite', require('./routes/satelliteRoutes'));
+app.use('/api/automation', require('./routes/automationRoutes'));
 
 const PORT = process.env.PORT || 3001;
 
