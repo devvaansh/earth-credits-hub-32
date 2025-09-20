@@ -1,5 +1,11 @@
 // runAutomation.js
 const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs');
+
+// Get project ID from command line arguments
+const projectId = process.argv[2];
+console.log(`[Playwright] Starting automation for Project ID: ${projectId}`);
 
 // --- Your custom styles and scripts remain here ---
 const customCSS = `
@@ -36,26 +42,42 @@ const customJS = `
 // --- Main Playwright script ---
 (async () => {
   let browser;
+  let context;
+  
   try {
     console.log('[Playwright] Starting automation…');
+    
+    // Check if auth.json exists
+    const authPath = path.join(__dirname, '..', '..', 'auth.json');
+    if (!fs.existsSync(authPath)) {
+      console.error('[Playwright] ERROR: auth.json not found. Please ensure you have saved authentication state.');
+      process.exit(1);
+    }
+    
     // =========================================================================
     // === ADD slowMo TO SLOW DOWN THE SCRIPT (in milliseconds) ===
     browser = await chromium.launch({
       headless: false,
       slowMo: 2000, // Adjust this value to control the speed
     });
+    console.log('[Playwright] Browser launched successfully');
     // =========================================================================
 
     // Load the saved auth state to skip login
-    const context = await browser.newContext({ storageState: 'auth.json' });
+    context = await browser.newContext({ storageState: authPath });
+    console.log('[Playwright] Context created with auth state');
 
     const page = await context.newPage();
     await page.setViewportSize({ width: 1300, height: 800 });
+    console.log('[Playwright] Page created and viewport set');
 
     // Go directly to the page that requires login
+    console.log('[Playwright] Navigating to verifier dashboard...');
     await page.goto(
-      'https://earth-credits-hub-32-cn42.vercel.app/verifier-dashboard'
+      'https://earth-credits-hub-32-cn42.vercel.app/verifier-dashboard',
+      { waitUntil: 'networkidle' }
     );
+    console.log('[Playwright] Successfully navigated to dashboard');
 
     // Inject the CSS and JS
     console.log('[Playwright] Injecting custom visuals...');
@@ -64,24 +86,61 @@ const customJS = `
     console.log('[Playwright] Visuals injected successfully!');
 
     // The rest of your automation script will now run more slowly
-    await page
-      .getByRole('row', { name: 'Mangrove Restoration Project' })
-      .getByRole('button')
-      .nth(1)
-      .click();
-    await page.getByRole('tab', { name: 'Documents' }).click();
-    await page.getByText('project_methodology.docx').click();
-    await page.getByText('field_photos_2025.zip').click();
-    await page.getByRole('tab', { name: 'Map & Imagery' }).click();
-    await page.locator('html').click();
+    console.log('[Playwright] Starting interaction with project table...');
+    
+    try {
+      await page
+        .getByRole('row', { name: 'Mangrove Restoration Project' })
+        .getByRole('button')
+        .nth(1)
+        .click();
+      console.log('[Playwright] Clicked on project row');
+    } catch (error) {
+      console.error('[Playwright] Could not find Mangrove Restoration Project row:', error.message);
+      // Try to take a screenshot for debugging
+      await page.screenshot({ path: 'debug-screenshot.png' });
+      console.log('[Playwright] Debug screenshot saved as debug-screenshot.png');
+    }
+    
+    try {
+      await page.getByRole('tab', { name: 'Documents' }).click();
+      console.log('[Playwright] Clicked Documents tab');
+      
+      await page.getByText('project_methodology.docx').click();
+      console.log('[Playwright] Clicked project methodology document');
+      
+      await page.getByText('field_photos_2025.zip').click();
+      console.log('[Playwright] Clicked field photos document');
+      
+      await page.getByRole('tab', { name: 'Map & Imagery' }).click();
+      console.log('[Playwright] Clicked Map & Imagery tab');
+      
+      await page.locator('html').click();
+      console.log('[Playwright] Clicked on html element');
+    } catch (error) {
+      console.error('[Playwright] Error during document interaction:', error.message);
+      await page.screenshot({ path: 'debug-error-screenshot.png' });
+    }
 
     await page.waitForTimeout(5000);
+    console.log('[Playwright] Automation completed successfully');
+    
   } catch (error) {
     console.error('[Playwright] SCRIPT FAILED:', error);
+    console.error('[Playwright] Error stack:', error.stack);
+    process.exit(1);
   } finally {
-    if (browser) {
-      await browser.close();
-      console.log('[Playwright] Browser closed.');
+    try {
+      if (context) {
+        await context.close();
+        console.log('[Playwright] Context closed');
+      }
+      if (browser) {
+        await browser.close();
+        console.log('[Playwright] Browser closed');
+      }
+    } catch (closeError) {
+      console.error('[Playwright] Error closing browser:', closeError);
     }
   }
 })();
