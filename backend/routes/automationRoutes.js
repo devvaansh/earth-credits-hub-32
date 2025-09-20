@@ -1,11 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { generateAutomatedReport } = require('../controllers/automationController');
-// const authMiddleware = require('../middleware/auth'); // Temporarily commented out
 
-// @route   POST /api/automation/generate-report
-// @desc    Generates a pre-verification report using Playwright
-// @access  Public (for now)
-router.post('/generate-report', generateAutomatedReport); // Temporarily removed authMiddleware
+// This line imports BOTH functions from your controller file.
+const { generateAutomatedReport, getReportStatus } = require('../controllers/automationController');
+
+// This route starts the automation.
+// It uses the 'generateAutomatedReport' function.
+router.post('/generate-report', generateAutomatedReport);
+
+// This route allows the frontend to check for the finished report.
+// It uses the 'getReportStatus' function.
+router.get('/report/:projectId', getReportStatus);
 
 module.exports = router;
