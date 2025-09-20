@@ -33,7 +33,7 @@ try {
 // Middleware
 // --- FIX: Updated the origin to match your frontend port ---
 app.use(cors({
-    origin: 'http://localhost:8080', 
+    origin: ['http://localhost:5173', 'http://localhost:8080', 'https://earth-credits-hub-32-cn42.vercel.app'], 
     credentials: true,
 }));
 app.use(express.json());

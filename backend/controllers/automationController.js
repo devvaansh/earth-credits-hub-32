@@ -3,6 +3,14 @@ const path = require('path');
 
 exports.generateAutomatedReport = (req, res) => {
     const { projectId } = req.body;
+    
+    if (!projectId) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'Project ID is required' 
+        });
+    }
+    
     console.log(`[Server] Received request to launch automation for Project #${projectId}`);
     
     const scriptPath = path.join(__dirname, '..', 'automation', 'run-playwright.js');
