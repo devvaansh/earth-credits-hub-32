@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Filter, ExternalLink, Zap, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
 interface Project {
@@ -33,6 +34,7 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
   const { toast } = useToast();
 
   const [isGenerating, setIsGenerating] = useState<string | null>(null);
+  const [reportData, setReportData] = useState<any | null>(null);
 
   const filteredProjects = projects.filter(project => {
     const matchesSearch = 
@@ -47,40 +49,22 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
   });
 
   const getAIRecommendationBadge = (recommendation: string, confidence: number) => {
+    // ... your existing badge logic is unchanged ...
     switch (recommendation) {
-      case 'Data Sufficient':
-        return (
-          <Badge className="bg-success text-success-foreground">
-            🟢 Data Sufficient ({confidence}%)
-          </Badge>
-        );
-      case 'Field Visit Recommended':
-        return (
-          <Badge variant="secondary">
-            🟡 Field Visit Required ({confidence}%)
-          </Badge>
-        );
-      case 'In Review':
-        return (
-          <Badge variant="outline">
-            🔵 In Review
-          </Badge>
-        );
-      default:
-        return null;
+        case 'Data Sufficient': return (<Badge className="bg-success text-success-foreground">🟢 Data Sufficient ({confidence}%)</Badge>);
+        case 'Field Visit Recommended': return (<Badge variant="secondary">🟡 Field Visit Required ({confidence}%)</Badge>);
+        case 'In Review': return (<Badge variant="outline">🔵 In Review</Badge>);
+        default: return null;
     }
   };
 
   const getStatusBadge = (status: string) => {
+    // ... your existing badge logic is unchanged ...
     switch (status) {
-      case 'Approved':
-        return <Badge className="bg-success text-success-foreground">Approved</Badge>;
-      case 'Rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
-      case 'More Info Requested':
-        return <Badge variant="secondary">More Info Requested</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
+        case 'Approved': return <Badge className="bg-success text-success-foreground">Approved</Badge>;
+        case 'Rejected': return <Badge variant="destructive">Rejected</Badge>;
+        case 'More Info Requested': return <Badge variant="secondary">More Info Requested</Badge>;
+        default: return <Badge variant="outline">Pending</Badge>;
     }
   };
 
@@ -88,37 +72,36 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
     navigate(`/project/${projectId}`);
   };
 
-  // --- UPDATED HANDLER FOR DETACHED AUTOMATION ---
+  // --- MODIFIED HANDLER ---
   const handleGenerateReport = async (project: Project) => {
     setIsGenerating(project.id);
+    setReportData(null);
 
     try {
         const response = await fetch('http://localhost:3001/api/automation/generate-report', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId: project.id,
-            }),
+            body: JSON.stringify({ projectId: project.id }),
         });
 
         const data = await response.json();
 
-        if (response.ok && data.success) {
-            toast({
-                title: "Automation Started",
-                description: data.message,
-            });
-        } else {
-            throw new Error(data.message || 'Failed to start automation process.');
+        if (!response.ok) {
+            throw new Error(data.message || 'The server returned an error.');
         }
+        
+        // This is now the last step in the 'try' block
+        setReportData(data); 
 
     } catch (error) {
         toast({
-            title: "Error Starting Automation",
+            title: "Automation Failed",
             description: (error as Error).message,
             variant: "destructive",
         });
     } finally {
+        // This 'finally' block ensures the loading spinner always stops,
+        // even if there's an error.
         setIsGenerating(null);
     }
   };
@@ -127,12 +110,12 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
   return (
     <>
       <Card className="shadow-lg">
+        {/* ... (Your CardHeader and other JSX is unchanged) ... */}
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Project Verification Queue</span>
             <Badge variant="outline">{filteredProjects.length} Projects</Badge>
           </CardTitle>
-          
           <div className="flex flex-col sm:flex-row gap-4 mt-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -143,7 +126,6 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
                 className="pl-10"
               />
             </div>
-            
             <div className="flex gap-2">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]">
@@ -158,7 +140,6 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
                   <SelectItem value="More Info Requested">More Info Requested</SelectItem>
                 </SelectContent>
               </Select>
-              
               <Select value={aiFilter} onValueChange={setAiFilter}>
                 <SelectTrigger className="w-[200px]">
                   <Filter className="h-4 w-4 mr-2" />
@@ -174,7 +155,6 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
             </div>
           </div>
         </CardHeader>
-        
         <CardContent>
           <div className="rounded-lg border">
             <Table>
@@ -226,12 +206,12 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
                               {isGenerating === project.id ? (
                                 <>
                                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Starting...
+                                  Analyzing...
                                 </>
                               ) : (
                                 <>
                                   <Zap className="h-4 w-4 mr-2" />
-                                  Generate
+                                  AI ANALYSIS
                                 </>
                               )}
                             </Button>
@@ -255,9 +235,28 @@ const ProjectQueueTable: React.FC<ProjectQueueTableProps> = ({ projects }) => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* This Dialog component is correct and will now show the data */}
+      <Dialog open={!!reportData} onOpenChange={() => setReportData(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Automated Analysis Report</DialogTitle>
+                <DialogDescription>
+                    Project: {reportData?.projectName} ({reportData?.projectId})
+                </DialogDescription>
+            </DialogHeader>
+            <div className="py-4 text-sm space-y-3">
+                <p><strong>Analysis Date:</strong> {reportData ? new Date(reportData.analysisDate).toLocaleString() : ''}</p>
+                <p><strong>Outcome:</strong> <span className="font-semibold text-green-500">{reportData?.status}</span></p>
+                <div className="mt-4 p-4 bg-muted/50 rounded-md border">
+                    <p className="font-semibold mb-2">Summary:</p>
+                    <p className="text-muted-foreground">{reportData?.summary}</p>
+                </div>
+            </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
 
 export default ProjectQueueTable;
-
