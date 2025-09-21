@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -27,8 +27,8 @@ interface ActivityEvent {
   timestamp: string;
 }
 
-const SystemOverview = () => {
-  const systemAlerts: SystemAlert[] = [
+const SystemOverview: React.FC = () => {
+  const systemAlerts = useMemo(() => [
     {
       id: '1',
       type: 'warning',
@@ -37,7 +37,7 @@ const SystemOverview = () => {
     },
     {
       id: '2',
-      type: 'error', 
+      type: 'error',
       message: 'Project #1847 approved despite low AI confidence (65%). Admin audit recommended.',
       timestamp: '4 hours ago'
     },
@@ -47,9 +47,9 @@ const SystemOverview = () => {
       message: 'Ocean Conservation NGO has had 3 consecutive projects rejected. Review account.',
       timestamp: '1 day ago'
     }
-  ];
+  ], []);
 
-  const activityFeed: ActivityEvent[] = [
+  const activityFeed = useMemo(() => [
     {
       id: '1',
       type: 'approval',
@@ -68,24 +68,24 @@ const SystemOverview = () => {
       message: '1,500 Carbon Credits minted for Project #1849. Tx: 0x742d35Cc...',
       timestamp: '2 hours ago'
     }
-  ];
+  ], []);
 
-  const getAlertIcon = (type: string) => {
+  const getAlertIcon = useCallback((type: string) => {
     switch (type) {
       case 'error': return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'warning': return <Clock className="h-4 w-4 text-warning" />;
       default: return <Eye className="h-4 w-4 text-info" />;
     }
-  };
+  }, []);
 
-  const getActivityIcon = (type: string) => {
+  const getActivityIcon = useCallback((type: string) => {
     switch (type) {
       case 'approval': return <CheckCircle className="h-4 w-4 text-success" />;
       case 'registration': return <Users className="h-4 w-4 text-primary" />;
       case 'minting': return <Coins className="h-4 w-4 text-secondary" />;
       default: return <Activity className="h-4 w-4" />;
     }
-  };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -102,7 +102,6 @@ const SystemOverview = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="shadow-lg border-secondary/20">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -114,7 +113,6 @@ const SystemOverview = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="shadow-lg border-accent/20">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -126,7 +124,6 @@ const SystemOverview = () => {
             </div>
           </CardContent>
         </Card>
-
         <Card className="shadow-lg border-success/20">
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -167,7 +164,6 @@ const SystemOverview = () => {
             ))}
           </CardContent>
         </Card>
-
         {/* Live Activity Feed */}
         <Card className="shadow-lg">
           <CardHeader>
