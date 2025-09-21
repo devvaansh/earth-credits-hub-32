@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,50 +25,38 @@ interface DocumentViewerProps {
 }
 
 const DocumentViewer: React.FC<DocumentViewerProps> = ({ documents }) => {
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(documents[0] || null);
+  const [selectedDoc, setSelectedDoc] = useState<Document | null>(() => documents[0] || null);
 
-  const getFileIcon = (type: string) => {
+  const getFileIcon = useCallback((type: string) => {
     switch (type) {
-      case 'pdf':
-        return '📄';
-      case 'docx':
-        return '📝';
+      case 'pdf': return '📄';
+      case 'docx': return '📝';
       case 'jpg':
-      case 'png':
-        return '🖼️';
-      default:
-        return '📁';
+      case 'png': return '🖼️';
+      default: return '📁';
     }
-  };
+  }, []);
 
-  const getAccuracyBadge = (accuracy?: number) => {
+  const getAccuracyBadge = useCallback((accuracy?: number) => {
     if (!accuracy) return null;
-    
-    if (accuracy >= 95) {
-      return <Badge className="bg-success text-success-foreground">High Accuracy</Badge>;
-    } else if (accuracy >= 80) {
-      return <Badge variant="secondary">Medium Accuracy</Badge>;
-    } else {
-      return <Badge variant="destructive">Low Accuracy</Badge>;
-    }
-  };
+    if (accuracy >= 95) return <Badge className="bg-success text-success-foreground">High Accuracy</Badge>;
+    if (accuracy >= 80) return <Badge variant="secondary">Medium Accuracy</Badge>;
+    return <Badge variant="destructive">Low Accuracy</Badge>;
+  }, []);
 
-  const highlightEntities = (text: string, entities: Document['highlighted_entities'] = []) => {
+  const highlightEntities = useCallback((text: string, entities: Document['highlighted_entities'] = []) => {
     if (!entities.length) return text;
 
     let highlightedText = text;
-    
     entities.forEach((entity) => {
       const regex = new RegExp(`(${entity.text})`, 'gi');
       const className = `bg-${entity.type === 'coordinate' ? 'primary' : 
-                              entity.type === 'date' ? 'secondary' : 
-                              entity.type === 'name' ? 'accent' : 'muted'}/20 px-1 rounded`;
-      
+                        entity.type === 'date' ? 'secondary' : 
+                        entity.type === 'name' ? 'accent' : 'muted'}/20 px-1 rounded`;
       highlightedText = highlightedText.replace(regex, `<mark class="${className}">$1</mark>`);
     });
-
     return highlightedText;
-  };
+  }, []);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
@@ -88,8 +76,8 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documents }) => {
                 <div
                   key={doc.id}
                   className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                    selectedDoc?.id === doc.id 
-                      ? 'bg-primary/10 border-primary' 
+                    selectedDoc?.id === doc.id
+                      ? 'bg-primary/10 border-primary'
                       : 'hover:bg-muted/50'
                   }`}
                   onClick={() => setSelectedDoc(doc)}
@@ -131,9 +119,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documents }) => {
                     {selectedDoc.ocrAccuracy && (
                       <>
                         {getAccuracyBadge(selectedDoc.ocrAccuracy)}
-                        {selectedDoc.ocrAccuracy < 80 && (
-                          <AlertCircle className="h-4 w-4 text-destructive" />
-                        )}
+                        {selectedDoc.ocrAccuracy < 80 && <AlertCircle className="h-4 w-4 text-destructive" />}
                       </>
                     )}
                     <Button variant="outline" size="sm">
@@ -148,9 +134,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documents }) => {
                   <div className="text-center">
                     <FileText className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">Document preview</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedDoc.name}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{selectedDoc.name}</p>
                   </div>
                 </div>
               </CardContent>
@@ -178,7 +162,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({ documents }) => {
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[300px]">
-                    <div 
+                    <div
                       className="prose max-w-none text-sm whitespace-pre-wrap"
                       dangerouslySetInnerHTML={{
                         __html: highlightEntities(selectedDoc.ocrText, selectedDoc.highlighted_entities)

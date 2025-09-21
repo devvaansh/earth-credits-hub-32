@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { Brain, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Brain, FileText, AlertTriangle, XCircle } from 'lucide-react';
 
 interface ChecklistItem {
   id: string;
@@ -22,7 +21,6 @@ interface AIAnalysisTabProps {
 }
 
 const AIAnalysisTab: React.FC<AIAnalysisTabProps> = ({
-  projectId,
   confidenceScore,
   aiNarrativeSummary,
   checklistItems,
@@ -31,63 +29,55 @@ const AIAnalysisTab: React.FC<AIAnalysisTabProps> = ({
   const [editableItems, setEditableItems] = useState(checklistItems);
   const [notes, setNotes] = useState('');
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-success" />;
-      case 'failed':
-        return <XCircle className="h-4 w-4 text-destructive" />;
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-secondary" />;
-      default:
-        return <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />;
+      case 'completed': return <CheckCircle className="h-4 w-4 text-success" />;
+      case 'failed': return <XCircle className="h-4 w-4 text-destructive" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-secondary" />;
+      default: return <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />;
     }
-  };
+  }, []);
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = useCallback((status: string) => {
     switch (status) {
-      case 'completed':
-        return <Badge className="bg-success text-success-foreground">Verified</Badge>;
-      case 'failed':
-        return <Badge variant="destructive">Issues Found</Badge>;
-      case 'warning':
-        return <Badge variant="secondary">Needs Review</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
+      case 'completed': return <Badge className="bg-success text-success-foreground">Verified</Badge>;
+      case 'failed': return <Badge variant="destructive">Issues Found</Badge>;
+      case 'warning': return <Badge variant="secondary">Needs Review</Badge>;
+      default: return <Badge variant="outline">Pending</Badge>;
     }
-  };
+  }, []);
 
-  const getConfidenceColor = (score: number) => {
+  const getConfidenceColor = useCallback((score: number) => {
     if (score >= 85) return 'text-success';
     if (score >= 70) return 'text-secondary';
     return 'text-destructive';
-  };
+  }, []);
 
-  const toggleChecklistItem = (id: string) => {
-    const updatedItems = editableItems.map(item => {
-      if (item.id === id) {
-        let newStatus: ChecklistItem['status'];
-        switch (item.status) {
-          case 'pending':
-            newStatus = 'completed';
-            break;
-          case 'completed':
-            newStatus = 'warning';
-            break;
-          case 'warning':
-            newStatus = 'failed';
-            break;
-          default:
-            newStatus = 'pending';
+  const toggleChecklistItem = useCallback(
+    (id: string) => {
+      const updatedItems = editableItems.map(item => {
+        if (item.id === id) {
+          let newStatus: ChecklistItem['status'];
+          switch (item.status) {
+            case 'pending': newStatus = 'completed'; break;
+            case 'completed': newStatus = 'warning'; break;
+            case 'warning': newStatus = 'failed'; break;
+            default: newStatus = 'pending';
+          }
+          return { ...item, status: newStatus };
         }
-        return { ...item, status: newStatus };
-      }
-      return item;
-    });
-    
-    setEditableItems(updatedItems);
-    onUpdateChecklist(updatedItems);
-  };
+        return item;
+      });
+      setEditableItems(updatedItems);
+      onUpdateChecklist(updatedItems);
+    },
+    [editableItems, onUpdateChecklist]
+  );
+
+  const completedCount = useMemo(
+    () => editableItems.filter(item => item.status === 'completed').length,
+    [editableItems]
+  );
 
   return (
     <div className="space-y-6">
@@ -125,19 +115,17 @@ const AIAnalysisTab: React.FC<AIAnalysisTabProps> = ({
           <CardTitle className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-success" />
             <span>Verification Checklist</span>
-            <Badge variant="outline">
-              {editableItems.filter(item => item.status === 'completed').length} / {editableItems.length} Complete
-            </Badge>
+            <Badge variant="outline">{completedCount} / {editableItems.length} Complete</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {editableItems.map((item) => (
-              <div key={item.id} className="flex items-start space-x-3 p-3 border border-border rounded-lg hover:bg-muted/30 transition-colors">
-                <button
-                  onClick={() => toggleChecklistItem(item.id)}
-                  className="mt-1"
-                >
+              <div
+                key={item.id}
+                className="flex items-start space-x-3 p-3 border border-border rounded-lg hover:bg-muted/30 transition-colors"
+              >
+                <button onClick={() => toggleChecklistItem(item.id)} className="mt-1">
                   {getStatusIcon(item.status)}
                 </button>
                 <div className="flex-1">

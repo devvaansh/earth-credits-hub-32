@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,9 +13,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// ## UPDATED LOGO IMPORT ##
-// Using a placeholder URL to resolve the local pathing issue in the environment.
-const companyLogo = 'https://placehold.co/100x100/FFFFFF/9370db?text=GF'; 
+const companyLogo = 'https://placehold.co/100x100/FFFFFF/9370db?text=GF';
 
 const ngoData = {
   name: "Green Future Initiative",
@@ -32,8 +30,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
   const navigate = useNavigate();
   const { toast } = useToast();
   const userEmail = localStorage.getItem('userEmail');
-  
-  const handleLogout = () => {
+
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userEmail');
     toast({
@@ -41,43 +39,42 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
       description: "You have been signed out of your account",
     });
     navigate('/login');
-  };
+  }, [navigate, toast]);
+
+  const handleLogoClick = useCallback(() => {
+    navigate('/dashboard');
+  }, [navigate]);
 
   return (
-    // Main header container: fixed, full-width, with padding to contain the cylindrical element
     <header className="w-full sticky top-0 z-50 py-3 px-4 sm:px-6 lg:px-8">
-      {/* Cylindrical content wrapper: applies the new background color and rounded corners */}
-      <div 
+      <div
         className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6 sm:px-8 lg:px-10 rounded-full shadow-lg"
-        style={{ backgroundColor: '#9370db' }} // Apply custom purple background
+        style={{ backgroundColor: '#9370db' }}
       >
-        
-        {/* Left Side: Title and Branding */}
         <div className="flex items-center space-x-4">
-          {/* Container for the logo with hover effect */}
-          <div 
-            className="group cursor-pointer" 
-            onClick={() => navigate('/dashboard')}
+          <div
+            className="group cursor-pointer"
+            onClick={handleLogoClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if(e.key === 'Enter' || e.key === ' ') handleLogoClick(); }}
+            aria-label="Go to dashboard"
           >
-            {/* The img tag for your logo, now styled to be circular */}
-            <img 
-              src={companyLogo} 
-              alt="Company Logo" 
-              className="h-10 w-10 rounded-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110" 
+            <img
+              src={companyLogo}
+              alt="Company Logo"
+              className="h-10 w-10 rounded-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110"
             />
           </div>
           <div>
-            {/* Text color changed to white for contrast */}
             <h1 className="text-xl font-semibold tracking-tight text-white">{title}</h1>
             <p className="text-purple-100 mt-0.5 text-sm">{subtitle}</p>
           </div>
         </div>
 
-        {/* Right Side: User Actions */}
         <div className="flex items-center space-x-2">
           {children}
 
-          {/* LOGOUT BUTTON WITH UPDATED STYLING */}
           <Button
             size="sm"
             onClick={handleLogout}
@@ -89,9 +86,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full group transition-transform duration-300 ease-in-out hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white">
+              <Button
+                variant="ghost"
+                className="relative h-10 w-10 rounded-full group transition-transform duration-300 ease-in-out hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-white"
+                aria-label="User menu"
+              >
                 <Avatar className="h-9 w-9 border-2 border-transparent group-hover:border-white/50 transition-colors duration-300">
-                  {/* Avatar fallback colors adjusted for purple background */}
                   <AvatarFallback className="bg-purple-700 text-purple-100 font-semibold">{ngoData.initials}</AvatarFallback>
                 </Avatar>
               </Button>
@@ -100,9 +100,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none text-slate-900">{ngoData.name}</p>
-                  <p className="text-xs leading-none text-slate-500 pt-1">
-                    {userEmail}
-                  </p>
+                  <p className="text-xs leading-none text-slate-500 pt-1">{userEmail}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -128,4 +126,3 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ title, subtitle, chil
 };
 
 export default DashboardHeader;
-

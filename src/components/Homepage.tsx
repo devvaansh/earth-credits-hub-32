@@ -8,7 +8,7 @@ import { ArrowRight, CheckCircle, Waves, Database, Satellite, Users } from 'luci
 import { ColourfulText } from './ui/colorfultext';
 import { BackgroundBeamsWithCollision } from "@/components/ui/background-beams-with-collision";
 
-// Use React.lazy for dynamic import in a Vite/CRA project.
+// Use React.lazy for dynamic import
 const World = lazy(() => import('@/components/ui/globe').then((m) => ({ default: m.World })));
 
 // --- STATIC CONFIGURATIONS ---
@@ -63,7 +63,6 @@ const HeroSection = memo(() => (
           </div>
           <h1 className="text-5xl sm:text-6xl font-bold tracking-tighter leading-tight  text-fuchsia-500">
             The Trust Layer for BLUE CARBON <br />
-           
           </h1>
           <p className="text-lg text-slate-300 max-w-lg">
             Our platform uses blockchain and satellite-based AI to provide transparent, verifiable, and community-focused monitoring for blue carbon ecosystem restoration.
@@ -197,17 +196,16 @@ const CtaSection = memo(() => (
   </section>
 ));
 
+// --- HOMEPAGE MAIN ---
 const Homepage = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-white overflow-x-hidden">
       <Navbar />
-
       <div className="fixed inset-0 z-0 overflow-hidden">
         <div className="blurry-dot one"></div>
         <div className="blurry-dot two"></div>
         <div className="blurry-dot three"></div>
       </div>
-
       <main className="relative z-10">
         <HeroSection />
         <FeaturesSection />
@@ -240,29 +238,27 @@ const Homepage = () => {
         </section>
         <CtaSection />
       </main>
-
       <Footer />
-      
       <style>{`
         .blurry-dot {
           position: absolute;
           border-radius: 9999px;
-          filter: blur(128px); /* 3xl */
+          filter: blur(128px);
           will-change: transform, opacity;
         }
         .blurry-dot.one {
-          top: 25%; left: 25%; width: 18rem; height: 18rem; /* 72 */
-          background-color: rgba(6, 182, 212, 0.05); /* cyan-500/5 */
+          top: 25%; left: 25%; width: 18rem; height: 18rem;
+          background-color: rgba(6, 182, 212, 0.05);
           animation: pulse-slow 7s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         .blurry-dot.two {
-          top: 50%; right: 33.33%; width: 24rem; height: 24rem; /* 96 */
-          background-color: rgba(16, 185, 129, 0.05); /* emerald-400/5 */
+          top: 50%; right: 33.33%; width: 24rem; height: 24rem;
+          background-color: rgba(16, 185, 129, 0.05);
           animation: pulse-slower 9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         .blurry-dot.three {
-          bottom: 25%; left: 33.33%; width: 20rem; height: 20rem; /* 80 */
-          background-color: rgba(96, 165, 250, 0.05); /* blue-400/5 */
+          bottom: 25%; left: 33.33%; width: 20rem; height: 20rem;
+          background-color: rgba(96, 165, 250, 0.05);
           animation: ping-slow 5s cubic-bezier(0, 0, 0.2, 1) infinite;
         }
         @keyframes pulse-slow { 50% { opacity: 0.8; } }

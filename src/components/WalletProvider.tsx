@@ -1,14 +1,8 @@
-import React, { ReactNode } from "react";
+import React, { useMemo, ReactNode } from "react";
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
-import {
-  ConnectionProvider,
-  WalletProvider,
-} from "@solana/wallet-adapter-react";
+import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import {
-  PhantomWalletAdapter,
-  SolflareWalletAdapter,
-} from "@solana/wallet-adapter-wallets";
+import { PhantomWalletAdapter, SolflareWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl } from "@solana/web3.js";
 
 // Import the wallet adapter styles
@@ -18,12 +12,20 @@ interface SolanaWalletProviderProps {
   children: ReactNode;
 }
 
-// Create the wallet adapter outside of the component to avoid React hooks issues
-const network = WalletAdapterNetwork.Devnet;
-const endpoint = clusterApiUrl(network);
-const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
-
 const SolanaWalletProvider = ({ children }: SolanaWalletProviderProps) => {
+  // Can be set to 'devnet', 'testnet', or 'mainnet-beta'
+  const network = WalletAdapterNetwork.Devnet;
+
+  // Memoize the endpoint to avoid recalculating it on every render
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+
+  // Memoize the wallets array to avoid re-instantiating wallet adapters on every render
+  const wallets = useMemo(
+    () => [new PhantomWalletAdapter(), new SolflareWalletAdapter()],
+    // The dependency array is empty, so this is only created once
+    []
+  );
+
   return (
     <ConnectionProvider endpoint={endpoint}>
       <WalletProvider wallets={wallets} autoConnect>
@@ -33,4 +35,5 @@ const SolanaWalletProvider = ({ children }: SolanaWalletProviderProps) => {
   );
 };
 
-export default SolanaWalletProvider;
+// Exporting with React.memo prevents the component from re-rendering if its props (children) do not change.
+export default React.memo(SolanaWalletProvider);

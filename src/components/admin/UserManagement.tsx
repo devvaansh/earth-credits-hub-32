@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,9 +11,7 @@ import {
   Eye, 
   CheckCircle, 
   XCircle,
-  MessageSquare,
-  Activity,
-  Calendar
+  MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -82,144 +80,141 @@ const UserManagement = () => {
     }
   ]);
 
-  const handleApproveUser = (userId: string) => {
+  const handleApproveUser = useCallback((userId: string) => {
     setUsers(prev => 
-      prev.map(user => 
-        user.id === userId ? { ...user, status: 'Approved' as const } : user
-      )
+      prev.map(user => user.id === userId ? { ...user, status: 'Approved' } : user)
     );
     toast({
       title: "User Approved",
       description: "User has been successfully approved and can now access the platform.",
     });
-  };
+  }, [toast]);
 
-  const handleSuspendUser = (userId: string) => {
+  const handleSuspendUser = useCallback((userId: string) => {
     setUsers(prev => 
-      prev.map(user => 
-        user.id === userId ? { ...user, status: 'Suspended' as const } : user
-      )
+      prev.map(user => user.id === userId ? { ...user, status: 'Suspended' } : user)
     );
     toast({
       title: "User Suspended", 
       description: "User access has been suspended.",
       variant: "destructive"
     });
-  };
+  }, [toast]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'Approved':
-        return 'bg-success text-success-foreground';
-      case 'Suspended':
-        return 'bg-destructive text-destructive-foreground';
-      default:
-        return 'bg-warning text-warning-foreground';
+      case 'Approved': return 'bg-success text-success-foreground';
+      case 'Suspended': return 'bg-destructive text-destructive-foreground';
+      default: return 'bg-warning text-warning-foreground';
     }
-  };
+  }, []);
 
-  const filteredUsers = (type: 'NGO' | 'Verifier') => 
-    users.filter(user => 
-      user.type === type && 
+  const filteredNGOs = useMemo(
+    () => users.filter(user =>
+      user.type === 'NGO' &&
       (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       user.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    ),
+    [users, searchTerm]
+  );
+  const filteredVerifiers = useMemo(
+    () => users.filter(user =>
+      user.type === 'Verifier' &&
+      (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    ),
+    [users, searchTerm]
+  );
 
-  const UserTable = ({ userType }: { userType: 'NGO' | 'Verifier' }) => (
-    <div className="space-y-4">
-      {filteredUsers(userType).map((user) => (
-        <Card key={user.id} className="shadow-sm border border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className="flex items-center space-x-2">
-                    {userType === 'NGO' ? (
-                      <Users className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Shield className="h-5 w-5 text-secondary" />
-                    )}
-                    <h3 className="font-semibold text-foreground">{user.name}</h3>
+  const UserTable = useCallback(({ userType }: { userType: 'NGO' | 'Verifier' }) => {
+    const tableUsers = userType === 'NGO' ? filteredNGOs : filteredVerifiers;
+    return (
+      <div className="space-y-4">
+        {tableUsers.map((user) => (
+          <Card key={user.id} className="shadow-sm border border-border">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className="flex items-center space-x-2">
+                      {userType === 'NGO'
+                        ? <Users className="h-5 w-5 text-primary" />
+                        : <Shield className="h-5 w-5 text-secondary" />
+                      }
+                      <h3 className="font-semibold text-foreground">{user.name}</h3>
+                    </div>
+                    <Badge className={getStatusColor(user.status)}>
+                      {user.status}
+                    </Badge>
                   </div>
-                  <Badge className={getStatusColor(user.status)}>
-                    {user.status}
-                  </Badge>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Contact Person</p>
-                    <p className="font-medium">{user.contactPerson}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Email</p>
-                    <p className="font-medium">{user.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Date Joined</p>
-                    <p className="font-medium">{user.dateJoined}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">
-                      {userType === 'NGO' ? 'Projects Submitted' : 'Projects Reviewed'}
-                    </p>
-                    <p className="font-medium">{user.totalProjects}</p>
-                  </div>
-                </div>
-
-                {user.certifications && (
-                  <div className="mt-3">
-                    <p className="text-muted-foreground text-sm mb-2">Certifications</p>
-                    <div className="flex flex-wrap gap-2">
-                      {user.certifications.map((cert, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {cert}
-                        </Badge>
-                      ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Contact Person</p>
+                      <p className="font-medium">{user.contactPerson}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Email</p>
+                      <p className="font-medium">{user.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Date Joined</p>
+                      <p className="font-medium">{user.dateJoined}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{userType === 'NGO' ? 'Projects Submitted' : 'Projects Reviewed'}</p>
+                      <p className="font-medium">{user.totalProjects}</p>
                     </div>
                   </div>
-                )}
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Profile
-                </Button>
-                
-                {user.status === 'Pending Approval' && (
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleApproveUser(user.id)}
-                    className="bg-success text-success-foreground hover:bg-success/90"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    Approve
+                  {user.certifications && (
+                    <div className="mt-3">
+                      <p className="text-muted-foreground text-sm mb-2">Certifications</p>
+                      <div className="flex flex-wrap gap-2">
+                        {user.certifications.map((cert, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {cert}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Profile
                   </Button>
-                )}
-                
-                {user.status === 'Approved' && (
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleSuspendUser(user.id)}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    Suspend
+                  {user.status === 'Pending Approval' && (
+                    <Button
+                      size="sm"
+                      onClick={() => handleApproveUser(user.id)}
+                      className="bg-success text-success-foreground hover:bg-success/90"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      Approve
+                    </Button>
+                  )}
+                  {user.status === 'Approved' && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleSuspendUser(user.id)}
+                    >
+                      <XCircle className="h-4 w-4 mr-1" />
+                      Suspend
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm">
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Message
                   </Button>
-                )}
-                
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="h-4 w-4 mr-1" />
-                  Message
-                </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  );
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }, [filteredNGOs, filteredVerifiers, getStatusColor, handleApproveUser, handleSuspendUser]);
 
   return (
     <div className="space-y-6">
@@ -255,11 +250,9 @@ const UserManagement = () => {
                 <span>Verifiers</span>
               </TabsTrigger>
             </TabsList>
-            
             <TabsContent value="ngos" className="mt-6">
               <UserTable userType="NGO" />
             </TabsContent>
-            
             <TabsContent value="verifiers" className="mt-6">
               <UserTable userType="Verifier" />
             </TabsContent>

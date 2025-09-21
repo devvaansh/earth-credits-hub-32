@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, CheckCircle, XCircle, MessageSquare, TrendingUp, FileSignature, Loader2, ShieldCheck, X, Copy, MapPin, CalendarDays, Scaling, Landmark } from 'lucide-react';
+import {
+  ArrowLeft, CheckCircle, XCircle, MessageSquare, TrendingUp,
+  FileSignature, Loader2, ShieldCheck, X, Copy, MapPin,
+  CalendarDays, Scaling
+} from 'lucide-react';
 import DashboardHeader from './DashboardHeader';
 import EvidenceHub from './EvidenceHub';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,8 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import mapSnapshotImage from '@/assets/assets23.jpg';
 import solTokenImage from '@/assets/sol.webp';
 
-
-//=========== TYPE DEFINITIONS for TypeScript ===========//
+// =========== TYPE DEFINITIONS for TypeScript =========== //
 
 type ProjectStatus = 'Pending' | 'Approved' | 'Rejected';
 
@@ -43,7 +46,7 @@ interface Document {
 }
 
 interface MapLayer {
-  id:string;
+  id: string;
   name: string;
   type: 'satellite' | 'photo' | 'analysis';
   date: string;
@@ -104,13 +107,55 @@ interface ProjectData {
   messages: Message[];
 }
 
-//=========== REACT COMPONENT ===========//
+// =========== MOCK PROJECT DATA OUTSIDE COMPONENT =========== //
+
+const MOCK_PROJECT_DATA: ProjectData = {
+  id: '1',
+  name: 'Mombasa Mangrove Restoration',
+  ngoName: 'Ocean Conservation Trust',
+  location: 'Mombasa, Kenya',
+  hectares: 150,
+  carbonClaim: 2500,
+  dateSubmitted: '2025-09-15',
+  confidenceScore: 72,
+  aiRecommendation: 'Field Visit Recommended',
+  aiSummary: `The submitted land ownership deed (doc_1.pdf) was successfully processed via OCR, and the stated coordinates align with the project's geographic boundaries. However, a 15% discrepancy was noted between the claimed biomass density in the northern sector and our analysis of Sentinel-2 satellite imagery from August 2025...`,
+  checklistItems: [
+    { id: '1', label: 'Document Authenticity', status: 'completed', description: 'OCR data is clear and consistent' },
+    { id: '2', label: 'Geospatial Integrity', status: 'completed', description: 'Boundaries match land deeds' },
+    { id: '3', label: 'Visual Evidence Correlation', status: 'warning', description: 'NGO imagery partially conflicts with satellite data' },
+    { id: '4', label: 'Methodology Compliance', status: 'completed', description: 'Aligns with Verra VCS standards' },
+    { id: '5', label: 'Temporal Analysis', status: 'warning', description: 'Growth patterns require field verification' }
+  ],
+  documents: [
+    { id: '1', name: 'land_ownership_deed.pdf', type: 'pdf', size: '2.4 MB', uploadDate: '2025-09-15', highlighted_entities: [{ text: 'Ocean Conservation NGO', type: 'name', confidence: 0.99 }] },
+    { id: '2', name: 'project_methodology.docx', type: 'docx', size: '1.8 MB', uploadDate: '2025-09-15' },
+    { id: '3', name: 'field_photos_2025.zip', type: 'jpg', size: '45.2 MB', uploadDate: '2025-09-15' }
+  ],
+  projectBounds: [[-4.0435, 39.6682], [-4.0445, 39.6692], [-4.0455, 39.6685], [-4.0450, 39.6675]],
+  mapLayers: [{ id: 'satellite-2025', name: 'Sentinel-2 Latest', type: 'satellite', date: '2025-09-10', enabled: true }],
+  photoPins: [{ id: '1', lat: -4.0440, lng: 39.6685, title: 'Northern Sector', date: '2025-09-15', thumbnail: '' }],
+  analysisAreas: [{ id: '1', type: 'concern', coordinates: [[-4.0435, 39.6685], [-4.0440, 39.6690]], description: '15% biomass discrepancy detected.' }],
+  auditTrail: [{ id: '1', timestamp: '2025-09-15 11:40 AM', actor: 'NGO', action: 'Project Submitted', details: 'Initial submission' }],
+  messages: [{ id: '1', sender: 'Ocean Conservation Trust', senderType: 'ngo', message: 'Hello, we have submitted our project for verification.', timestamp: '2025-09-15 12:00 PM', read: true }]
+};
+
+// =========== PROJECT SUMMARY CARDS =========== //
+
+const PROJECT_SUMMARY_CARDS = [
+  { icon: TrendingUp, label: "Carbon Claim", value: (data: ProjectData) => `${data.carbonClaim.toLocaleString()} tCO₂e` },
+  { icon: Scaling, label: "Area", value: (data: ProjectData) => `${data.hectares} Hectares` },
+  { icon: MapPin, label: "Location", value: (data: ProjectData) => data.location },
+  { icon: CalendarDays, label: "Submitted", value: (data: ProjectData) => data.dateSubmitted }
+];
+
+// =========== REACT COMPONENT =========== //
 
 const ProjectVerificationWorkspace: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [projectStatus, setProjectStatus] = useState<ProjectStatus>('Pending');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
@@ -118,48 +163,45 @@ const ProjectVerificationWorkspace: React.FC = () => {
   const [signingStep, setSigningStep] = useState<'confirm' | 'processing' | 'complete'>('confirm');
   const [transactionHash, setTransactionHash] = useState<string>('');
 
-  // NOTE: This is mock data. In a real app, this would be fetched.
-  const projectData: ProjectData = {
-    id: projectId || '1',
-    name: 'Mombasa Mangrove Restoration',
-    ngoName: 'Ocean Conservation Trust',
-    location: 'Mombasa, Kenya',
-    hectares: 150,
-    carbonClaim: 2500,
-    dateSubmitted: '2025-09-15',
-    confidenceScore: 72,
-    aiRecommendation: 'Field Visit Recommended',
-    aiSummary: `The submitted land ownership deed (doc_1.pdf) was successfully processed via OCR, and the stated coordinates align with the project's geographic boundaries. However, a 15% discrepancy was noted between the claimed biomass density in the northern sector and our analysis of Sentinel-2 satellite imagery from August 2025...`,
-    checklistItems: [
-      { id: '1', label: 'Document Authenticity', status: 'completed', description: 'OCR data is clear and consistent' },
-      { id: '2', label: 'Geospatial Integrity', status: 'completed', description: 'Boundaries match land deeds' },
-      { id: '3', label: 'Visual Evidence Correlation', status: 'warning', description: 'NGO imagery partially conflicts with satellite data' },
-      { id: '4', label: 'Methodology Compliance', status: 'completed', description: 'Aligns with Verra VCS standards' },
-      { id: '5', label: 'Temporal Analysis', status: 'warning', description: 'Growth patterns require field verification' }
-    ],
-    documents: [
-      { id: '1', name: 'land_ownership_deed.pdf', type: 'pdf', size: '2.4 MB', uploadDate: '2025-09-15', highlighted_entities: [{ text: 'Ocean Conservation NGO', type: 'name', confidence: 0.99 }] },
-      { id: '2', name: 'project_methodology.docx', type: 'docx', size: '1.8 MB', uploadDate: '2025-09-15' },
-      { id: '3', name: 'field_photos_2025.zip', type: 'jpg', size: '45.2 MB', uploadDate: '2025-09-15' }
-    ],
-    projectBounds: [[-4.0435, 39.6682], [-4.0445, 39.6692], [-4.0455, 39.6685], [-4.0450, 39.6675]],
-    mapLayers: [{ id: 'satellite-2025', name: 'Sentinel-2 Latest', type: 'satellite', date: '2025-09-10', enabled: true }],
-    photoPins: [{ id: '1', lat: -4.0440, lng: 39.6685, title: 'Northern Sector', date: '2025-09-15', thumbnail: '' }],
-    analysisAreas: [{ id: '1', type: 'concern', coordinates: [[-4.0435, 39.6685], [-4.0440, 39.6690]], description: '15% biomass discrepancy detected.' }],
-    auditTrail: [{ id: '1', timestamp: '2025-09-15 11:40 AM', actor: 'NGO', action: 'Project Submitted', details: 'Initial submission' }],
-    messages: [{ id: '1', sender: 'Ocean Conservation Trust', senderType: 'ngo', message: 'Hello, we have submitted our project for verification.', timestamp: '2025-09-15 12:00 PM', read: true }]
-  };
-  
-  const handleApprove = () => {
-    setIsSigningModalOpen(true);
-  };
+  // Use correct project data for view (static/mocked here)
+  const projectData = useMemo(() => ({
+    ...MOCK_PROJECT_DATA,
+    id: projectId || MOCK_PROJECT_DATA.id,
+  }), [projectId]);
 
-  const handleConfirmSign = () => {
+  // BADGES: Memoized for performance
+  const getStatusBadge = useMemo(() => {
+    switch (projectStatus) {
+      case 'Approved':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 shadow-sm hover:bg-green-500/30 transition-colors">Approved</Badge>;
+      case 'Rejected':
+        return <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30 shadow-sm hover:bg-red-500/30 transition-colors">Rejected</Badge>;
+      default:
+        return <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-sm">Under Review</Badge>;
+    }
+  }, [projectStatus]);
+
+  const getAIRecommendationBadge = useMemo(() => {
+    switch (projectData.aiRecommendation) {
+      case 'Data Sufficient':
+        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 shadow-sm">AI Confidence: {projectData.confidenceScore}% (Data Sufficient)</Badge>;
+      case 'Field Visit Recommended':
+        return <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-sm">AI Confidence: {projectData.confidenceScore}% (Field Visit Recommended)</Badge>;
+      default:
+        return <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400 shadow-sm">AI: In Review</Badge>;
+    }
+  }, [projectData.aiRecommendation, projectData.confidenceScore]);
+
+  // HANDLERS: Memoized if useful or static; otherwise inline
+  const handleApprove = useCallback(() => {
+    setIsSigningModalOpen(true);
+  }, []);
+
+  const handleConfirmSign = useCallback(() => {
     setIsProcessing(true);
     setSigningStep('processing');
-    
     setTimeout(() => {
-      const mockTxHash = `0x${[...Array(64)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+      const mockTxHash = `0x${Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('')}`;
       setTransactionHash(mockTxHash);
       setSigningStep('complete');
       setProjectStatus('Approved');
@@ -169,17 +211,17 @@ const ProjectVerificationWorkspace: React.FC = () => {
       });
       setIsProcessing(false);
     }, 3500);
-  };
+  }, [toast]);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsSigningModalOpen(false);
     setTimeout(() => {
       setSigningStep('confirm');
       setTransactionHash('');
     }, 300);
-  };
+  }, []);
 
-  const handleReject = async () => {
+  const handleReject = useCallback(() => {
     setIsProcessing(true);
     setTimeout(() => {
       setProjectStatus('Rejected');
@@ -190,36 +232,16 @@ const ProjectVerificationWorkspace: React.FC = () => {
       });
       setIsProcessing(false);
     }, 1500);
-  };
+  }, [toast]);
 
-  const handleRequestInfo = () => {
+  const handleRequestInfo = useCallback(() => {
     toast({
       title: 'Information Request Sent',
       description: 'A message has been sent to the NGO.',
     });
-  };
+  }, [toast]);
 
-  const getStatusBadge = () => {
-    switch (projectStatus) {
-      case 'Approved':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 shadow-sm hover:bg-green-500/30 transition-colors">Approved</Badge>;
-      case 'Rejected':
-        return <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/30 shadow-sm hover:bg-red-500/30 transition-colors">Rejected</Badge>;
-      default:
-        return <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-400 shadow-sm">Under Review</Badge>;
-    }
-  };
-
-  const getAIRecommendationBadge = () => {
-    switch (projectData.aiRecommendation) {
-      case 'Data Sufficient':
-        return <Badge className="bg-green-500/20 text-green-400 border-green-500/30 shadow-sm">AI Confidence: {projectData.confidenceScore}% (Data Sufficient)</Badge>;
-      case 'Field Visit Recommended':
-        return <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-sm">AI Confidence: {projectData.confidenceScore}% (Field Visit Recommended)</Badge>;
-      default:
-        return <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400 shadow-sm">AI: In Review</Badge>;
-    }
-  };
+  // ========== RENDER ==========
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 font-sans">
@@ -229,15 +251,15 @@ const ProjectVerificationWorkspace: React.FC = () => {
           subtitle="Detailed Evidence Analysis & Decision Making"
         />
 
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => navigate('/verifier-dashboard')}
           className="group text-muted-foreground transition-colors hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4 mr-2 transition-transform group-hover:-translate-x-1" />
           Back to Dashboard
         </Button>
-        
+
         <Card className="shadow-lg bg-card/80 backdrop-blur-sm border-border/50">
           <CardHeader>
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between space-y-4 lg:space-y-0">
@@ -248,31 +270,26 @@ const ProjectVerificationWorkspace: React.FC = () => {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3 shrink-0">
-                {getAIRecommendationBadge()}
-                {getStatusBadge()}
+                {getAIRecommendationBadge}
+                {getStatusBadge}
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { icon: TrendingUp, label: "Carbon Claim", value: `${projectData.carbonClaim.toLocaleString()} tCO₂e` },
-                  { icon: Scaling, label: "Area", value: `${projectData.hectares} Hectares` },
-                  { icon: MapPin, label: "Location", value: projectData.location },
-                  { icon: CalendarDays, label: "Submitted", value: projectData.dateSubmitted }
-                ].map((item, index) => (
-                  <div key={index} className="bg-muted/40 p-4 rounded-lg border border-border/50 group hover:bg-muted/80 hover:border-primary/50 transition-all duration-300">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-background rounded-md border border-border/50">
-                        <item.icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">{item.label}</p>
-                        <p className="font-bold text-lg text-foreground">{item.value}</p>
-                      </div>
+              {PROJECT_SUMMARY_CARDS.map((item, index) => (
+                <div key={index} className="bg-muted/40 p-4 rounded-lg border border-border/50 group hover:bg-muted/80 hover:border-primary/50 transition-all duration-300">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-background rounded-md border border-border/50">
+                      <item.icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">{item.label}</p>
+                      <p className="font-bold text-lg text-foreground">{item.value(projectData)}</p>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -291,7 +308,7 @@ const ProjectVerificationWorkspace: React.FC = () => {
                 <CheckCircle className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:rotate-12" />
                 Approve & Mint Credits
               </Button>
-              
+
               <Button
                 variant="destructive"
                 onClick={handleReject}
@@ -301,7 +318,7 @@ const ProjectVerificationWorkspace: React.FC = () => {
                 <XCircle className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:rotate-12" />
                 Reject Project
               </Button>
-              
+
               <Button
                 variant="outline"
                 onClick={handleRequestInfo}
@@ -340,15 +357,22 @@ const ProjectVerificationWorkspace: React.FC = () => {
                         <FileSignature className="h-5 w-5 mr-2 text-primary" />
                         Sign Contract & Issue Credits
                       </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">Review the details before broadcasting to the blockchain.</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Review the details before broadcasting to the blockchain.
+                      </p>
                     </div>
-                    <Button variant="ghost" size="icon" className="rounded-full -mt-2 -mr-2" onClick={handleCloseModal} disabled={isProcessing}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="rounded-full -mt-2 -mr-2"
+                      onClick={handleCloseModal}
+                      disabled={isProcessing}
+                    >
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-
                   {signingStep === 'confirm' && (
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,17 +383,26 @@ const ProjectVerificationWorkspace: React.FC = () => {
                           </div>
                         </div>
                         <div className="space-y-2 group">
-                           <p className="text-sm font-semibold">Digital Asset Preview</p>
-                           <div className="aspect-video rounded-lg overflow-hidden border border-border/50 group-hover:border-primary/50 transition-all duration-300 p-1">
-                             <img src={solTokenImage} alt="Solana carbon credit token" className="w-full h-full object-cover rounded-md transition-transform duration-300 group-hover:scale-105" />
-                           </div>
+                          <p className="text-sm font-semibold">Digital Asset Preview</p>
+                          <div className="aspect-video rounded-lg overflow-hidden border border-border/50 group-hover:border-primary/50 transition-all duration-300 p-1">
+                            <img src={solTokenImage} alt="Solana carbon credit token" className="w-full h-full object-cover rounded-md transition-transform duration-300 group-hover:scale-105" />
+                          </div>
                         </div>
                       </div>
-                      
+
                       <div className="border border-border/50 bg-muted/40 rounded-lg p-4 space-y-3 text-sm">
-                        <div className="flex justify-between items-center"><span>Project:</span> <span className="font-medium text-right text-foreground">{projectData.name}</span></div>
-                        <div className="flex justify-between items-center"><span>Credits to Mint:</span> <span className="font-bold text-green-500 text-right">{projectData.carbonClaim.toLocaleString()} CO₂e Tokens</span></div>
-                        <div className="flex justify-between items-center"><span>Network Fee (Solana):</span> <span className="font-mono text-muted-foreground text-right">~0.00005 SOL</span></div>
+                        <div className="flex justify-between items-center">
+                          <span>Project:</span>
+                          <span className="font-medium text-right text-foreground">{projectData.name}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Credits to Mint:</span>
+                          <span className="font-bold text-green-500 text-right">{projectData.carbonClaim.toLocaleString()} CO₂e Tokens</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Network Fee (Solana):</span>
+                          <span className="font-mono text-muted-foreground text-right">~0.00005 SOL</span>
+                        </div>
                       </div>
                       <div className="flex gap-4 pt-2">
                         <Button variant="outline" className="w-full hover:bg-accent hover:border-primary/50" onClick={handleCloseModal}>Cancel</Button>
@@ -380,19 +413,19 @@ const ProjectVerificationWorkspace: React.FC = () => {
 
                   {signingStep === 'processing' && (
                     <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 min-h-[300px] relative overflow-hidden">
-                       <div className="absolute inset-0 bg-primary/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
-                       <Loader2 className="h-12 w-12 text-primary animate-spin" />
-                       <p className="font-semibold text-lg text-foreground">Processing Transaction</p>
-                       <p className="text-sm text-muted-foreground max-w-xs">
-                         Broadcasting to the Solana network. This may take a few moments. Please don't close this window.
-                       </p>
+                      <div className="absolute inset-0 bg-primary/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
+                      <Loader2 className="h-12 w-12 text-primary animate-spin" />
+                      <p className="font-semibold text-lg text-foreground">Processing Transaction</p>
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Broadcasting to the Solana network. This may take a few moments. Please don't close this window.
+                      </p>
                     </div>
                   )}
 
                   {signingStep === 'complete' && (
                     <div className="flex flex-col items-center justify-center text-center p-6 space-y-4 min-h-[300px]">
-                      <motion.div initial={{scale:0}} animate={{scale:1}} transition={{type:'spring', stiffness:200, damping:10}}>
-                         <ShieldCheck className="h-14 w-14 text-green-500" />
+                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 10 }}>
+                        <ShieldCheck className="h-14 w-14 text-green-500" />
                       </motion.div>
                       <p className="font-semibold text-xl text-foreground">Transaction Successful!</p>
                       <p className="text-sm text-muted-foreground">
@@ -401,8 +434,11 @@ const ProjectVerificationWorkspace: React.FC = () => {
                       <div className="w-full bg-muted/50 p-3 rounded-md border border-border/50 text-left relative group">
                         <p className="text-xs text-muted-foreground">Solana Transaction Signature</p>
                         <p className="font-mono text-xs break-all text-foreground">{transactionHash}</p>
-                        <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => { navigator.clipboard.writeText(transactionHash); toast({ title: 'Copied to clipboard!' }); }}>
-                           <Copy className="h-4 w-4" />
+                        <Button variant="ghost" size="icon"
+                          className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => { navigator.clipboard.writeText(transactionHash); toast({ title: 'Copied to clipboard!' }); }}
+                        >
+                          <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                       <Button className="w-full mt-4 bg-primary hover:bg-primary/90" onClick={handleCloseModal}>Done</Button>

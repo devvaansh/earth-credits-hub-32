@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -33,7 +32,6 @@ interface CommunicationLogProps {
 }
 
 const CommunicationLog: React.FC<CommunicationLogProps> = ({
-  projectId,
   auditTrail,
   messages,
   onSendMessage,
@@ -41,36 +39,34 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
   const [newMessage, setNewMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'audit' | 'messages'>('audit');
 
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      onSendMessage(newMessage.trim());
-      setNewMessage('');
-    }
-  };
+  const unreadMessagesCount = useMemo(() => messages.filter(m => !m.read && m.senderType === 'ngo').length, [messages]);
 
-  const getSenderIcon = (senderType: string) => {
+  const getSenderIcon = useCallback((senderType: string) => {
     switch (senderType) {
-      case 'verifier':
-        return <User className="h-4 w-4 text-primary" />;
-      case 'ngo':
-        return <User className="h-4 w-4 text-success" />;
-      case 'system':
-        return <Bot className="h-4 w-4 text-muted-foreground" />;
-      default:
-        return <User className="h-4 w-4" />;
+      case 'verifier': return <User className="h-4 w-4 text-primary" />;
+      case 'ngo': return <User className="h-4 w-4 text-success" />;
+      case 'system': return <Bot className="h-4 w-4 text-muted-foreground" />;
+      default: return <User className="h-4 w-4" />;
     }
-  };
+  }, []);
 
-  const getActionColor = (action: string) => {
+  const getActionColor = useCallback((action: string) => {
     if (action.includes('Submitted') || action.includes('Complete')) return 'text-success';
     if (action.includes('Started') || action.includes('Viewed')) return 'text-primary';
     if (action.includes('Failed') || action.includes('Rejected')) return 'text-destructive';
     return 'text-muted-foreground';
-  };
+  }, []);
+
+  const handleSendMessage = useCallback(() => {
+    if (newMessage.trim()) {
+      onSendMessage(newMessage.trim());
+      setNewMessage('');
+    }
+  }, [newMessage, onSendMessage]);
 
   return (
     <div className="space-y-6">
-      {/* Tab Navigation */}
+      {/* Tabs */}
       <div className="flex space-x-1 bg-muted p-1 rounded-lg">
         <Button
           variant={activeTab === 'audit' ? 'default' : 'ghost'}
@@ -89,15 +85,14 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
         >
           <MessageCircle className="h-4 w-4 mr-2" />
           Messages
-          {messages.filter(m => !m.read && m.senderType === 'ngo').length > 0 && (
+          {unreadMessagesCount > 0 && (
             <Badge className="ml-2 bg-destructive text-destructive-foreground">
-              {messages.filter(m => !m.read && m.senderType === 'ngo').length}
+              {unreadMessagesCount}
             </Badge>
           )}
         </Button>
       </div>
 
-      {/* Audit Trail Tab */}
       {activeTab === 'audit' && (
         <Card>
           <CardHeader>
@@ -110,32 +105,20 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
           <CardContent>
             <ScrollArea className="h-[400px]">
               <div className="space-y-4">
-                {auditTrail.map((event, index) => (
+                {auditTrail.map((event, i) => (
                   <div key={event.id}>
                     <div className="flex items-start space-x-3">
                       <div className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <p className={`font-medium ${getActionColor(event.action)}`}>
-                            {event.action}
-                          </p>
-                          <span className="text-sm text-muted-foreground">
-                            {event.timestamp}
-                          </span>
+                          <p className={`font-medium ${getActionColor(event.action)}`}>{event.action}</p>
+                          <span className="text-sm text-muted-foreground">{event.timestamp}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          by {event.actor}
-                        </p>
-                        {event.details && (
-                          <p className="text-sm text-foreground mt-1">
-                            {event.details}
-                          </p>
-                        )}
+                        <p className="text-sm text-muted-foreground">by {event.actor}</p>
+                        {event.details && <p className="text-sm text-foreground mt-1">{event.details}</p>}
                       </div>
                     </div>
-                    {index < auditTrail.length - 1 && (
-                      <Separator className="my-4" />
-                    )}
+                    {i < auditTrail.length - 1 && <Separator className="my-4" />}
                   </div>
                 ))}
               </div>
@@ -144,10 +127,8 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
         </Card>
       )}
 
-      {/* Messages Tab */}
       {activeTab === 'messages' && (
         <div className="space-y-4">
-          {/* Message History */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -165,9 +146,7 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
                         message.senderType === 'verifier' ? 'flex-row-reverse space-x-reverse' : ''
                       }`}
                     >
-                      <div className="flex-shrink-0">
-                        {getSenderIcon(message.senderType)}
-                      </div>
+                      <div className="flex-shrink-0">{getSenderIcon(message.senderType)}</div>
                       <div
                         className={`flex-1 p-3 rounded-lg ${
                           message.senderType === 'verifier'
@@ -178,12 +157,8 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">
-                            {message.sender}
-                          </span>
-                          <span className="text-xs opacity-70">
-                            {message.timestamp}
-                          </span>
+                          <span className="text-sm font-medium">{message.sender}</span>
+                          <span className="text-xs opacity-70">{message.timestamp}</span>
                         </div>
                         <p className="text-sm">{message.message}</p>
                       </div>
@@ -194,7 +169,6 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
             </CardContent>
           </Card>
 
-          {/* Message Composer */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Send Message to NGO</CardTitle>
@@ -203,17 +177,12 @@ const CommunicationLog: React.FC<CommunicationLogProps> = ({
               <Textarea
                 placeholder="Type your message here..."
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={e => setNewMessage(e.target.value)}
                 className="min-h-[100px]"
               />
               <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">
-                  {newMessage.length}/1000 characters
-                </span>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim()}
-                >
+                <span className="text-sm text-muted-foreground">{newMessage.length}/1000 characters</span>
+                <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
                   <Send className="h-4 w-4 mr-2" />
                   Send Message
                 </Button>

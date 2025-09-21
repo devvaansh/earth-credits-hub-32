@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,13 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Eye, 
   Search, 
-  Filter,
-  UserCheck,
   Flag,
-  RotateCcw,
-  AlertCircle,
-  CheckCircle,
-  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,12 +75,15 @@ const ProjectOversight = () => {
     }
   ]);
 
-  const verifiers = ['Dr. Maria Rodriguez', 'Dr. James Smith', 'Dr. Emily Chen'];
+  const verifiers = useMemo(
+    () => ['Dr. Maria Rodriguez', 'Dr. James Smith', 'Dr. Emily Chen'],
+    []
+  );
 
-  const handleReassignProject = (projectId: string, newVerifier: string) => {
+  const handleReassignProject = useCallback((projectId: string, newVerifier: string) => {
     setProjects(prev =>
       prev.map(project =>
-        project.id === projectId 
+        project.id === projectId
           ? { ...project, assignedVerifier: newVerifier }
           : project
       )
@@ -95,12 +92,12 @@ const ProjectOversight = () => {
       title: "Project Reassigned",
       description: `Project #${projectId} has been reassigned to ${newVerifier}`,
     });
-  };
+  }, [toast]);
 
-  const handleFlagForAudit = (projectId: string) => {
+  const handleFlagForAudit = useCallback((projectId: string) => {
     setProjects(prev =>
       prev.map(project =>
-        project.id === projectId 
+        project.id === projectId
           ? { ...project, status: 'Admin Hold' as const }
           : project
       )
@@ -110,38 +107,34 @@ const ProjectOversight = () => {
       description: `Project #${projectId} has been placed on admin hold`,
       variant: "destructive"
     });
-  };
+  }, [toast]);
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'Approved':
-        return 'bg-success text-success-foreground';
-      case 'Minted':
-        return 'bg-primary text-primary-foreground';
-      case 'Admin Hold':
-        return 'bg-destructive text-destructive-foreground';
-      case 'Under Review':
-        return 'bg-secondary text-secondary-foreground';
-      default:
-        return 'bg-muted text-muted-foreground';
+      case 'Approved': return 'bg-success text-success-foreground';
+      case 'Minted': return 'bg-primary text-primary-foreground';
+      case 'Admin Hold': return 'bg-destructive text-destructive-foreground';
+      case 'Under Review': return 'bg-secondary text-secondary-foreground';
+      default: return 'bg-muted text-muted-foreground';
     }
-  };
+  }, []);
 
-  const getAIScoreColor = (score: number) => {
+  const getAIScoreColor = useCallback((score: number) => {
     if (score >= 80) return 'text-success';
     if (score >= 60) return 'text-warning';
     return 'text-destructive';
-  };
+  }, []);
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.ngoName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.id.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    const matchesVerifier = verifierFilter === 'all' || project.assignedVerifier === verifierFilter;
-    
-    return matchesSearch && matchesStatus && matchesVerifier;
-  });
+  const filteredProjects = useMemo(() =>
+    projects.filter(project => {
+      const matchesSearch = project.projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            project.ngoName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            project.id.includes(searchTerm);
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+      const matchesVerifier = verifierFilter === 'all' || project.assignedVerifier === verifierFilter;
+      return matchesSearch && matchesStatus && matchesVerifier;
+    })
+  , [projects, searchTerm, statusFilter, verifierFilter]);
 
   return (
     <div className="space-y-6">
@@ -155,7 +148,7 @@ const ProjectOversight = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Advanced Filtering */}
+          {/* Filters */}
           <div className="flex flex-wrap gap-4 mb-6 p-4 bg-muted/50 rounded-lg">
             <div className="flex items-center space-x-2">
               <Search className="h-4 w-4 text-muted-foreground" />
@@ -166,7 +159,6 @@ const ProjectOversight = () => {
                 className="w-64"
               />
             </div>
-            
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by Status" />
@@ -180,7 +172,6 @@ const ProjectOversight = () => {
                 <SelectItem value="Minted">Minted</SelectItem>
               </SelectContent>
             </Select>
-            
             <Select value={verifierFilter} onValueChange={setVerifierFilter}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter by Verifier" />
@@ -205,60 +196,43 @@ const ProjectOversight = () => {
                         <h3 className="font-semibold text-foreground mb-1">
                           #{project.id} - {project.projectName}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {project.ngoName}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{project.ngoName}</p>
                       </div>
-                      
                       <div>
                         <p className="text-sm text-muted-foreground">Assigned Verifier</p>
                         <p className="font-medium text-foreground">{project.assignedVerifier}</p>
                       </div>
-                      
                       <div>
                         <p className="text-sm text-muted-foreground">Date Submitted</p>
                         <p className="font-medium text-foreground">{project.dateSubmitted}</p>
                       </div>
-                      
                       <div>
                         <p className="text-sm text-muted-foreground">AI Score</p>
-                        <p className={`font-bold ${getAIScoreColor(project.aiScore)}`}>
-                          {project.aiScore}%
-                        </p>
+                        <p className={`font-bold ${getAIScoreColor(project.aiScore)}`}>{project.aiScore}%</p>
                       </div>
-                      
                       <div>
                         <p className="text-sm text-muted-foreground">Status</p>
-                        <Badge className={getStatusColor(project.status)}>
-                          {project.status}
-                        </Badge>
+                        <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
                       </div>
                     </div>
-                    
                     <div className="flex items-center space-x-2 ml-4">
                       <Button variant="outline" size="sm">
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </Button>
-                      
                       <Select onValueChange={(newVerifier) => handleReassignProject(project.id, newVerifier)}>
                         <SelectTrigger className="w-32">
                           <SelectValue placeholder="Reassign" />
                         </SelectTrigger>
                         <SelectContent>
-                          {verifiers
-                            .filter(v => v !== project.assignedVerifier)
-                            .map(verifier => (
-                              <SelectItem key={verifier} value={verifier}>
-                                {verifier}
-                              </SelectItem>
-                            ))}
+                          {verifiers.filter(v => v !== project.assignedVerifier).map(verifier => (
+                            <SelectItem key={verifier} value={verifier}>{verifier}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                      
                       {project.status !== 'Admin Hold' && project.status !== 'Minted' && (
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
                           onClick={() => handleFlagForAudit(project.id)}
                         >
@@ -268,7 +242,7 @@ const ProjectOversight = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 pt-3 border-t border-border">
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>Carbon Value: {project.carbonValue} tonnes CO₂</span>

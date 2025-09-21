@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Brain, FileText, Map, MessageCircle } from 'lucide-react';
@@ -75,22 +75,25 @@ interface EvidenceHubProps {
 const EvidenceHub: React.FC<EvidenceHubProps> = ({ projectData }) => {
   const [activeTab, setActiveTab] = useState('ai-analysis');
 
-  const handleUpdateChecklist = (items: any[]) => {
-    // Update checklist logic would go here
+  const handleUpdateChecklist = useCallback((items: any[]) => {
+    // Update checklist logic goes here
     console.log('Checklist updated:', items);
-  };
+  }, []);
 
-  const handleLayerToggle = (layerId: string, enabled: boolean) => {
-    // Layer toggle logic would go here
+  const handleLayerToggle = useCallback((layerId: string, enabled: boolean) => {
+    // Layer toggle logic goes here
     console.log('Layer toggled:', layerId, enabled);
-  };
+  }, []);
 
-  const handleSendMessage = (message: string) => {
-    // Send message logic would go here
+  const handleSendMessage = useCallback((message: string) => {
+    // Send message logic goes here
     console.log('Message sent:', message);
-  };
+  }, []);
 
-  const unreadMessages = projectData.messages.filter(m => !m.read && m.senderType === 'ngo').length;
+  const unreadMessages = useMemo(
+    () => projectData.messages.filter(m => !m.read && m.senderType === 'ngo').length,
+    [projectData.messages]
+  );
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
